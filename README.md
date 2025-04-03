@@ -39,7 +39,7 @@ Key business metrics that we aim to improve include:
 - 40% improvement in follow-through on action items identified in meetings
 - 50% decrease in redundant meetings due to improved knowledge sharing
 
-Privacy and Ethics Concerns:
+**Privacy and Ethics Concerns:**
 
 - Bias and Fairness
     - Ensure the system is not biased against marginalized groups, or amplifies narratives of dominant groups with fairness metrics.
@@ -49,6 +49,10 @@ Privacy and Ethics Concerns:
     - Ensure the systems generates answers based on trained, publicly available UN meetings data.
 
 Our mitigations will involve human-in-the-loop evaluation to foster fairness to responses. We will manually check a fraction of responses against these concerns, and incorporate a fairness metric (eg. Demographic Parity). We will also incorporate red-teaming to check for biased responses or hallucinations.
+
+**Scale Requirements:**
+
+Our project will mainly leverage the YouTube API to train on a large dataset of public UN meeting recordings. Our system employs three specialized models to address diverse aspects of meeting analysis, and it is deployed on the cloud with separate training and inference pipelines involving multiple GPUs, and the production model will be exposed as an API endpoint accessible via a Gradio frontend.
 
 ### Contributors
 
