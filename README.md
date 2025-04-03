@@ -61,41 +61,14 @@ Our mitigations will involve human-in-the-loop evaluation to foster fairness to 
 
 ### Contributors
 
-| Name             | Responsible for         | Link to their commits in this repo |
-| ---------------- | ----------------------- | ---------------------------------- |
-| All team members | **<Value Proposition>** |                                    |
+| Name            | Responsible for                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Link to their commits in this repo |
+|-----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------|
+| All team members | **Value Proposition** <br> - Understand and clarify our target customer. <br> - Evaluate our product’s potential benefits and state specific steps to achieve maximum customer benefits. <br><br> **Peer Review and Feedback** <br> - Provide constructive feedback on each member's tasks (git commits). <br> - Review and discuss git pull requests quickly. <br><br> **Business Specific Evaluation** <br> - Evaluate production service with respect to business metrics (latency, accuracy, privacy, robustness, etc.). |                                     |
+| Dae Sung Jin    | **Data Pipeline** <br> - Provision persistent storage on Chameleon (or on private cloud service, if needed). <br> - Set up a separate repository for all offline data and organize it by data type and purpose. <br> - Build and manage streaming data. Set up data processing and cleaning steps. Generate sample real-time data for simulation.                                                                                                                      |                                     |
+| Yongjae Chung   | **Model Serving and Monitoring** <br> - Wrap the models with an API to serve them at endpoints. <br> - Employ both model-level and system-level optimizations to satisfy infrastructure requirements. <br> - Define an automated offline model evaluation procedure using MLFlow. <br> - Perform online evaluation in a canary environment (with a set of users and real user scenarios).                                                         |                                     |
+| Yunho Jung      | **Model Training** <br> - Fine-tune AI models (Whisper, Llava) using selected datasets (mostly UN meeting videos and transcriptions). <br> - Experiment with various approaches to increase training velocity (multiple GPUs, model optimization strategies, Ray Train for fault tolerance and hyperparameter tuning, etc.).                                                                                                                          |                                     |
+| Sehyun Kim      | **Continuous Pipeline** <br> - Employ Ansible to automate provisioning and orchestration. <br> - Manage products as independent microservices via containers and APIs. <br> - Set up an automated pipeline for re-training, evaluating, and testing triggered by new streaming data. <br> - Manage three different environments for deployment, gradually developing from “staging” to “canary” to “production”. |                                     |
 
-- Understand and clarify our target customer. Evaluate our product’s potential benefits and state specific steps to achieve maximum customer benefits.
-
-**<Peer Review and Feedback>**
-
-- Provide constructive feedbacks to each member's task (git commits). Review and discuss git pull requests quickly.
-
-**<Business Specific Evaluation>** Evaluate production service with respect to business metrics. (latency, accuracy, privacy, robustness, etc.) | | | Dae Sung Jin | **<Data Pipeline>**
-
-- Provision persistent storage on Chameleon (or on private cloud service, if needed).
-    
-- Set up a separate repository for all the offline data and organize it by data type and purpose.
-    
-- Build and manage streaming data. Set up data processing and cleaning steps. Generate sample real-time data for simulation. | | | Yongjae Chung | **<Model Serving and Monitoring>**
-    
-- Wrap the models with API in order to serve it in endpoints. Employ both model-level and system-level optimizations to satisfy the infrastructure requirements.
-    
-- Define an automated offline model evaluation procedure using MLFlow.
-    
-- Perform online evaluation in canary environment (With a set of users and also real user scenario, behaviors) | | | Yunho Jung | **<Model Training>**
-    
-- Fine-tune AI models (Whisper, Llava) with selected dataset (mostly UN meeting videos and transcriptions).
-    
-- Experiment various approaches to increase training velocity. Use multiple GPUs, model optimization strategies, Ray Train to leverage fault tolerance and hyperparameter tuning, etc. | | | Sehyun Kim | **<Continous Pipeline>**
-    
-- Employ Ansible to automate provisioning and orchestration.
-    
-- In deployment, manage products into independent microservices via containers and APIs.
-    
-- Set an automated pipeline for re-training, evaluating and testing triggered by the new data (streaming data).
-    
-- Manage three different enviroments for deployment and gradually develop it from “staging”, “canary” to “production”. | |
 
 ### System diagram
 
