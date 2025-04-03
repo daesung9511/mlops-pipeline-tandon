@@ -274,3 +274,58 @@ We will define and monitor key business metrics stated in the value proposition,
 
 - **Data Drift Monitoring:** After our system is deployed in production, we aim to continuously monitor for data and label drift. We will continue to log each model in MLFlow, and track changes in model behavior that way.
 - **Model Degradation Detection:** With human annotators (us), we will observe for performance degradation and employ an automated retraining process with new, labeled, production data through our CI/CD pipeline.
+
+---
+
+### Data pipeline
+
+**Strategy**: Our data pipeline will handle two primary workflows:
+
+1. **Offline Training Data**: Collection, processing, and storage of labeled meeting videos
+2. **Online Inference Data**: Real-time processing of meeting videos and user queries
+
+**Offline Data Processing**:
+
+- Implement persistent storage for video data, extracted features, and training artifacts
+- Develop ETL and preprocessing pipelines for ingesting meeting videos from various sources (UN Web TV, YouTube API, direct uploads)
+- Create preprocessing workflows for video frame extraction, audio separation, and transcription generation
+- Store processed features in vector databases (LanceDB) optimized for retrieval
+
+**Online Data Processing**:
+
+- Implement streaming pipeline for real-time meeting analysis with UN Live video on Youtube
+- Use whisper to convert audio to text or the youtube auto-translate function to generate text
+- Create feature extraction services that process video segments as they become available
+- Develop query understanding and routing components to direct user questions to appropriate models
+
+**Data Management**:
+
+- Use LanceDB for efficient storage and retrieval of video segments
+- Implement data versioning to track changes in datasets over time
+- Create data quality monitoring to detect anomalies in incoming video characteristics
+
+**Simulated Online Data**:
+
+- Develop a simulation framework that generates synthetic meeting scenarios
+- Create realistic query patterns based on analysis of common information needs
+- Implement variable load patterns to test system scalability and resilience
+
+**Difficulty Point**:
+
+- **Interactive data dashboard**: We will implement a comprehensive dashboard using Grafana and custom visualizations that allows team members to:
+    - Explore data distribution across different meeting types
+    - Analyze model performance on different video characteristics
+    - Identify potential biases in model outputs
+    - Track data quality metrics over time
+    - Monitor storage usage and optimization opportunities
+
+---
+
+### Continuous X
+
+To build and maintain CI/CD pipeline approach, four principles and must be followed:
+
+- **Infrastructure-as-Code (IaaC)**: Employ Ansible and Kubernetes to automate provisioning and orchestration of infrastructures.
+- **Microservice Architecture**: For faster and easier deployment, all services must be divided into independent small parts (”microservices”). This also makes it easier to deal with faults (thanks to the isolation of services) and maintain the services as the product grows larger. To achieve it, we will containerize every service and create APIs.
+- **Automated pipeline from training to serving**: We will set an automated pipeline using Argo Workflows to re-train, evaluate and test models triggered by streaming data. Also we will develop Helm charts for all services to standardize deployment across environments. Lastly, GitHub Actions workflows can be used for version control.
+- Staged deployment: Deploying a product in a staging environment is important to identify and resolve potential bugs. It can also save time and costs caused by unnecessary rollbacks and fixing issues. To perform this step, we will set three different environments: “stage”, “canary”, and “production”. For canary environment, 5~10 artificial users and scenario (user behaviors) will be supposed.
