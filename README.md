@@ -63,6 +63,8 @@ Our mitigations will involve human-in-the-loop evaluation to foster fairness to 
 
 ### System diagram
 
+<img width="1252" alt="Image" src="https://github.com/user-attachments/assets/2fd2544a-bc14-4ab3-b42e-c33fbd1dcb40" />
+
 ### Summary of Outside Materials
 
 | Resource | How it was created | Conditions of use |
