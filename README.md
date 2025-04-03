@@ -1,78 +1,98 @@
-
-
-```
-              __                             _            ___                  __                  __          
-   ____ ___  / /___  ____  _____      ____  (_)___  ___  / (_)___  ___        / /_____ _____  ____/ /___  ____ 
-  / __ `__ \/ / __ \/ __ \/ ___/_____/ __ \/ / __ \/ _ \/ / / __ \/ _ \______/ __/ __ `/ __ \/ __  / __ \/ __ \
- / / / / / / / /_/ / /_/ (__  )_____/ /_/ / / /_/ /  __/ / / / / /  __/_____/ /_/ /_/ / / / / /_/ / /_/ / / / /
-/_/ /_/ /_/_/\____/ .___/____/     / .___/_/ .___/\___/_/_/_/ /_/\___/      \__/\__,_/_/ /_/\__,_/\____/_/ /_/ 
-                 /_/              /_/     /_/                                                                                                                                                                                     
-                                                                                                   
-```
-
 ## Title of project
 
-<!-- 
-Discuss: Value proposition: Your will propose a machine learning system that can be used in an existing business or service. (You should not propose a system in which a new business or service would be developed around the machine learning system.) Describe the value proposition for the machine learning system. What’s the (non-ML) status quo used in the business or service? What business metric are you going to be judged on? (Note that the “service” does not have to be for general users; you can propose a system for a science problem, for example.)
--->
+Vizario: AI-Powered Meeting Intelligence Platform for Enhanced Organizational Productivity
+
+## Value Proposition
+
+### Customer Description
+
+A customer X is a diplomat working at the United Nations (or it can be country delegates or government agencies). At the UN, thousands of meetings are conducted and recorded annually, but analyzing these meetings manually requires significant human resource and effort. Secretaries like X must take notes during meetings themselves, and transcription services alone fail to capture critical elements. It is necessary to capture contextual information, non-verbal cues, and the relationships between speakers for in-depth, accurate analysis. How can our AI assistant help this customer overcome these challenges?
+
+### Benefits
+
+- Accurate and rapid access to information :
+    
+    ```
+    - Advanced Search: Quickly locate relevant content by keyword, country, or topic.
+    - Customized Summaries: Generate country-specific or issue-based summary reports to support prompt decision-making.
+    ```
+    
+- Easy to get statement information by country or presenter
+    
+    ```
+     - Speaker identification :  detecting speakers by separating representatives of each countries even within the same countries.
+    ```
+    
+- Better understanding with prompt and proper translation
+    
+    ```
+     - Multilingual support : Auto-translation and keyword search to eliminate language barriers.
+    ```
+    
+
+### Vizario vs. Conventional Approach
+
+|Feature|Conventional|Vizario|
+|---|---|---|
+|Speaker detection|Manual or inaccurate|Automatic detection|
+|Multilingual support|Limited or unavailable|Automatic translation|
+|Search and Analysis|Unavailable or minimal|Advanced methods|
+|Transcription and summary|Available 1~2 days after meeting|Immediately available|
+
+### Business Metrics
+
+Key business metrics that we aim to improve include:
+
+- 70% reduction in time spent searching for information within meeting recordings
+- 80% reduction in time spent performing meeting information summarization and analysis for UN diplomats
+- 40% improvement in follow-through on action items identified in meetings
+- 50% decrease in redundant meetings due to improved knowledge sharing
+
+Privacy and Ethics Concerns:
+
+- Bias and Fairness
+    - Ensure the system is not biased against marginalized groups, or amplifies narratives of dominant groups with fairness metrics.
+- Misinformation
+    - Ensuring the system does not generate made-up information.
+- Data Security
+    - Ensure the systems generates answers based on trained, publicly available UN meetings data.
+
+Our mitigations will involve human-in-the-loop evaluation to foster fairness to responses. We will manually check a fraction of responses against these concerns, and incorporate a fairness metric (eg. Demographic Parity). We will also incorporate red-teaming to check for biased responses or hallucinations.
 
 ### Contributors
 
-<!-- Table of contributors and their roles. First row: define responsibilities that are shared by the team. Then each row after that is: name of contributor, their role, and in the third column you will link to their contributions. If your project involves multiple repos, you will link to their contributions in all repos here. -->
+| Name             | Responsible for         | Link to their commits in this repo |
+| ---------------- | ----------------------- | ---------------------------------- |
+| All team members | **<Value Proposition>** |                                    |
 
-| Name                            | Responsible for | Link to their commits in this repo |
-|---------------------------------|-----------------|------------------------------------|
-| All team members                |                 |                                    |
-| Team member 1                   |                 |                                    |
-| Team member 2                   |                 |                                    |
-| Team member 3                   |                 |                                    |
-| Team member 4 (if there is one) |                 |                                    |
+- Understand and clarify our target customer. Evaluate our product’s potential benefits and state specific steps to achieve maximum customer benefits.
 
+**<Peer Review and Feedback>**
 
+- Provide constructive feedbacks to each member's task (git commits). Review and discuss git pull requests quickly.
 
-### System diagram
+**<Business Specific Evaluation>** Evaluate production service with respect to business metrics. (latency, accuracy, privacy, robustness, etc.) | | | Dae Sung Jin | **<Data Pipeline>**
 
-<!-- Overall digram of system. Doesn't need polish, does need to show all the pieces. Must include: all the hardware, all the containers/software platforms, all the models, all the data. -->
-
-### Summary of outside materials
-
-<!-- In a table, a row for each dataset, foundation model. Name of data/model, conditions under which it was created (ideally with links/references), conditions under which it may be used. -->
-
-|              | How it was created | Conditions of use |
-|--------------|--------------------|-------------------|
-| Data set 1   |                    |                   |
-| Data set 2   |                    |                   |
-| Base model 1 |                    |                   |
-| etc          |                    |                   |
-
-
-### Summary of infrastructure requirements
-
-<!-- Itemize all your anticipated requirements: What (`m1.medium` VM, `gpu_mi100`), how much/when, justification. Include compute, floating IPs, persistent storage. The table below shows an example, it is not a recommendation. -->
-
-| Requirement     | How many/when                                     | Justification |
-|-----------------|---------------------------------------------------|---------------|
-| `m1.medium` VMs | 3 for entire project duration                     | ...           |
-| `gpu_mi100`     | 4 hour block twice a week                         |               |
-| Floating IPs    | 1 for entire project duration, 1 for sporadic use |               |
-| etc             |                                                   |               |
-
-### Detailed design plan
-
-<!-- In each section, you should describe (1) your strategy, (2) the relevant parts of the diagram, (3) justification for your strategy, (4) relate back to lecture material, (5) include specific numbers. -->
-
-#### Model training and training platforms
-
-<!-- Make sure to clarify how you will satisfy the Unit 4 and Unit 5 requirements, and which optional "difficulty" points you are attempting. -->
-
-#### Model serving and monitoring platforms
-
-<!-- Make sure to clarify how you will satisfy the Unit 6 and Unit 7 requirements,  and which optional "difficulty" points you are attempting. -->
-
-#### Data pipeline
-
-<!-- Make sure to clarify how you will satisfy the Unit 8 requirements,  and which optional "difficulty" points you are attempting. -->
-
-#### Continuous X
-
-<!-- Make sure to clarify how you will satisfy the Unit 3 requirements,  and which optional "difficulty" points you are attempting. -->
+- Provision persistent storage on Chameleon (or on private cloud service, if needed).
+    
+- Set up a separate repository for all the offline data and organize it by data type and purpose.
+    
+- Build and manage streaming data. Set up data processing and cleaning steps. Generate sample real-time data for simulation. | | | Yongjae Chung | **<Model Serving and Monitoring>**
+    
+- Wrap the models with API in order to serve it in endpoints. Employ both model-level and system-level optimizations to satisfy the infrastructure requirements.
+    
+- Define an automated offline model evaluation procedure using MLFlow.
+    
+- Perform online evaluation in canary environment (With a set of users and also real user scenario, behaviors) | | | Yunho Jung | **<Model Training>**
+    
+- Fine-tune AI models (Whisper, Llava) with selected dataset (mostly UN meeting videos and transcriptions).
+    
+- Experiment various approaches to increase training velocity. Use multiple GPUs, model optimization strategies, Ray Train to leverage fault tolerance and hyperparameter tuning, etc. | | | Sehyun Kim | **<Continous Pipeline>**
+    
+- Employ Ansible to automate provisioning and orchestration.
+    
+- In deployment, manage products into independent microservices via containers and APIs.
+    
+- Set an automated pipeline for re-training, evaluating and testing triggered by the new data (streaming data).
+    
+- Manage three different enviroments for deployment and gradually develop it from “staging”, “canary” to “production”. | |
