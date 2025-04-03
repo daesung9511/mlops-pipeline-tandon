@@ -96,3 +96,88 @@ Our mitigations will involve human-in-the-loop evaluation to foster fairness to 
 - Set an automated pipeline for re-training, evaluating and testing triggered by the new data (streaming data).
     
 - Manage three different enviroments for deployment and gradually develop it from “staging”, “canary” to “production”. | |
+
+
+
+### Model Serving
+
+**Serving from an API endpoint**: You must wrap your model in an API endpoint for serving. (If you implement a front end, it will call your API.)
+
+- We will serve our model output through an API endpoint using Fast API. Our frontend will be a Gradio Python Client, that connects to this API endpoint.
+- https://www.gradio.app/guides/fastapi-app-with-the-gradio-client
+
+**Our Performance Requirements**:
+
+Our current goal is to achieve these following metrics for production.
+
+- Latency: < 2 seconds for question answering on processed meetings
+- Throughput: Support for 50+ concurrent users
+- Batch processing: Complete full analysis of 1-hour meeting in < 5 minutes
+
+**Model optimizations to satisfy requirements**:
+
+- Quantization of vision models to INT8 precision
+- Knowledge distillation to create smaller, faster models for common query types
+- ONNX Runtime for optimized inference on CPU and GPU
+- TensorRT optimization for GPU inference workloads
+
+**System optimizations to satisfy requirements**:
+
+- Dynamic batching of requests to maximize throughput
+- Caching of video features and common query results
+- GPU sharing among multiple inference services with proper memory management
+- Load balancing across multiple inference endpoints
+
+---
+
+**Difficulty Point**:
+
+- **Develop multiple options for serving**: We will implement and compare three deployment options: (1) GPU-optimized serving with TensorRT, (2) CPU-optimized serving with ONNX Runtime and quantization, and (3) hybrid approach with model splitting across CPU/GPU based on computational requirements.
+
+---
+
+### Evaluation and Monitoring
+
+**Offline evaluation of model**:
+
+1. Evaluate on “standard chatbot” capability, and “meeting specific” use cases.
+2. Evaluate on populations and slices of special relevance
+    - Evaluate speaker bias - we will analyze the chatbot's performance based on the speaker's country, gender, or role.
+    - We also aim to evaluate the performance on different topics discussed in the meetings (e.g., humanitarian, security, environmental issues, etc).
+3. Handling Known failure models
+    - We will test the chatbot's ability to handle ambiguous or vague questions, by creating a dataset of ambiguous queries with generative AI, and evaluate the chatbot's responses, through offline testing.
+    - We also will verify with Human in the loop, to check if the system might be hallucinating and generating incorrect or made up information.
+4. Employing unit tests based on templates:
+    - We create a template-based unit testing suite. Some examples:
+        - "Who spoke about [topic] on [date]?"
+        - "Summarize the discussion on [topic]."
+        - "What was the vote count for resolution [number]?"
+        - "What country proposed [resolution]?"
+
+The metrics for these tests will include: accuracy, precision, recall, F1-score, BLEU, ROUGE.
+
+All results will be logged to MLflow, for comparing models over time.
+
+**Load test in staging**: 
+
+- Once our CI/CD pipeline deploys the service in a staging environment, load tests will be automatically triggered via GitHub Actions whenever an updated model is staged, ensuring that any performance regressions are promptly identified.
+
+**Online evaluation in canary**:
+
+- After passing staging tests, the service will be deployed in a canary environment for online evaluation.
+- We will simulate real-world user behavior by acting as a diverse set of artificial “users” (for instance, diplomats from various countries) to test the system’s responsiveness and reliability.
+- In addition to template-based unit tests, we will perform red teaming exercises to challenge the model and confirm it operates as intended.
+
+**Closing the loop**:
+
+- Feedback will be sourced from explicit user ratings (eg. thumbs up/down), and human-in-the -loop analysis of natural ground-truth labels.
+- We will save a portion of production data, and label them periodically, for retraining and improving the model.
+
+**Business-specific evaluation:**
+
+We will define and monitor key business metrics stated in the value proposition, such as reductions in search time, improvements in meeting accessibility (we will comparing time spent to manual searching) to measure the model’s impact on organizational productivity.
+
+**Difficulty Points:**
+
+- **Data Drift Monitoring:** After our system is deployed in production, we aim to continuously monitor for data and label drift. We will continue to log each model in MLFlow, and track changes in model behavior that way.
+- **Model Degradation Detection:** With human annotators (us), we will observe for performance degradation and employ an automated retraining process with new, labeled, production data through our CI/CD pipeline.
