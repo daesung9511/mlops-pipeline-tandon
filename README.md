@@ -97,7 +97,100 @@ Our mitigations will involve human-in-the-loop evaluation to foster fairness to 
     
 - Manage three different enviroments for deployment and gradually develop it from “staging”, “canary” to “production”. | |
 
+### System diagram
 
+### Summary of Outside Materials
+
+| Resource | How it was created | Conditions of use |
+| --- | --- | --- |
+| UN Web TV Dataset | Official recordings of UN meetings and events, professionally produced and archived by the United Nations. Available through the UN Web TV platform. | It is publicly available for viewing. Scraping and usage for educational purposes are permitted with attribution. |
+| YouTube API & Public Meeting Videos | User-uploaded content on YouTube platform. It includes corporate presentations, academic lectures, and government hearings. | YouTube API has usage quotas and requires API key. Content usage is governed by YouTube's Terms of Service. Some videos may be licensed under Creative Commons. |
+| OpenAI Whisper | Whisper is developed by OpenAI and shows the SoTA performance in speech-to-text recognition task. It was trained on 680,000 hours of multilingual and multitask supervision collected from the web. | It is released under MIT license. (permits commercial and research use with attribution) |
+| LanceDB | Open-source vector database built for AI applications by developers. | Apache 2.0 license. Permits commercial use, modification, and distribution. |
+| VideoDB | It is a specialized database for video storage and retrieval, optimized for AI applications. | Commercial product with tiered pricing, offering free tier for development with limitations. |
+
+**Data Resources**
+
+1. Youtube
+    1. **UN Security Council meeting on the Middle East** 
+        1. [https://www.youtube.com/watch?v=PHZ5BJpXoic](https://www.youtube.com/watch?v=PHZ5BJpXoic&t=1s)
+        2. https://www.youtube.com/watch?v=Vk1Fs5WEZsE
+        3. https://www.youtube.com/watch?v=wfAa1GiNdgM
+        4. https://www.youtube.com/watch?v=Q1B5MyXXslM
+        5. https://www.youtube.com/watch?v=ayxtmtMcO6M
+        6. https://www.youtube.com/watch?v=cvFTDNP2p50
+        7. https://www.youtube.com/watch?v=kybHwj8YZqs
+        8. https://www.youtube.com/watch?v=2NZVT3kFC6c
+        9. https://www.youtube.com/watch?v=RHv92D_ISgM
+        10. https://www.youtube.com/watch?v=QNRoyte6Dyw
+    2. **UN Security Council on Ukraine**
+        1. https://www.youtube.com/watch?v=GjL8610P890
+        2. https://www.youtube.com/watch?v=jAKYNwGSfkY
+        3. https://www.youtube.com/watch?v=R1dw75mpsfY
+        4. https://www.youtube.com/watch?v=qB3Ja3rFo-Y
+        5. https://www.youtube.com/watch?v=H2tq1fFzGio
+    
+2. [**UN Security Council Transcript**](https://digitallibrary.un.org/search?cc=Meeting+Records&ln=en&p=security+counci) 
+    1. https://www.youtube.com/watch?v=6U0a36WSirA
+        
+        https://digitallibrary.un.org/record/4064913?ln=en
+        
+    2. https://www.youtube.com/watch?v=8DQg5bUmuug
+        
+        https://digitallibrary.un.org/record/4065707?ln=en&v=pdf
+        
+    3. https://www.youtube.com/watch?v=i1rs-VHk0-U
+        
+        [S_PV.9853-EN.pdf](attachment:2731ef33-ad72-4b83-80f4-9afbde77c33b:S_PV.9853-EN.pdf)
+        
+3. UN General Assembly
+    1. https://gadebate.un.org/en
+
+### Summary of infrastructure requirements
+
+- Since the expected model size of LLAVA will be 1B - 10B, the infrastructure requirements would be planned based on its size referring to [this Large Language Model Metrics](https://www.linkedin.com/pulse/infrastructure-requirements-llms-arivukkarasan-raja-j0acc/)
+
+| Requirement | How many/when | Justification |
+| --- | --- | --- |
+| Medium CPU VMs | 5 for entire project duration | Required for continuous running of the orchestration layer, API servers, databases, and monitoring systems. |
+| 16 GB- 64 GB HBM and DDR4 RAM | 1 for batch training
+1 for real time inference | Needed for data preprocessing, feature extraction, and database operations that require significant memory and necessary to store the LLM parameters and intermediate data generated during inference. |
+| Nvidia A100s | 1 for batch training
+1 for real time inference | Required for inference serving of multiple models simultaneously with low latency requirements. |
+| Persistent Storage(NVMe or Chameleon Cloud Storage) | 2TB | Required for storing raw video data, preprocessed features, model checkpoints, and experiment artifacts. Video data is particularly storage-intensive. |
+| Floating IPs | 2 for entire project duration | Needed for stable endpoints for API service, monitoring dashboards, and experiment tracking server. |
+| Network Bandwidth(10GbE) | High-throughput connection | Video data transfer between storage and compute resources requires significant bandwidth. |
+
+**Strategy**: We will implement a multi-model architecture comprising:
+
+1. **Video Frame Analysis Model**: Fine-tuned CLIP or similar vision transformer to extract visual features and identify key visual elements in meetings (speakers, presentations, etc.).
+2. **Speech Recognition Model**: Adapted Whisper model for domain-specific speech recognition optimized for meeting terminology.
+3. **Multimodal Integration Model**: Custom transformer-based architecture that combines visual and textual features for holistic understanding of meeting content.
+4. **Query Understanding Model**: Fine-tuned language model to process user queries about meeting content.
+
+Our training approach will utilize transfer learning from foundation models to reduce training time and data requirements. The multimodal integration model will be our primary focus for custom training and regular re-training based on user feedback.
+
+**Justification**: This multi-model approach is necessary because single models lack the capability to process both visual and textual information with sufficient accuracy for complex meeting understanding. By specializing models for different aspects of the input, we can optimize each for its specific task while maintaining reasonable training requirements.
+
+**Training Implementation**:
+
+- We will host MLFlow on a dedicated VM for experiment tracking, logging model metrics, hyperparameters, and artifacts.
+- Ray will manage our distributed training infrastructure, allowing flexible scaling of resources.
+- Our training pipeline will implement gradient accumulation and mixed precision training to maximize GPU utilization.
+- For the multimodal integration model, we will implement Fully Sharded Data Parallel (FSDP) training across multiple GPUs to handle the memory requirements of large transformer models.
+
+**Difficulty Points**:
+
+1. **Composed of multiple models**: Our system naturally incorporates four interacting models that process different aspects of the input and collaborate to generate outputs.
+2. **Use distributed training to increase velocity**: We will implement and benchmark distributed training using various strategies (DDP vs. FSDP) to identify optimal configurations for our models, documenting training time reduction with increasing GPU count.
+
+**Metrics and Targets**:
+
+- Training throughput target: 200+ video frames processed per second during training
+- Training time: Complete model retraining in under 4 hours for rapid iteration
+- FSDP memory efficiency: Reduce per-GPU memory requirements by at least 60% compared to standard data parallel training
+
+---
 
 ### Model Serving
 
