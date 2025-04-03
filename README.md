@@ -11,23 +11,14 @@ A customer X is a diplomat working at the United Nations (or it can be country d
 ### Benefits
 
 - Accurate and rapid access to information :
-    
-    ```
     - Advanced Search: Quickly locate relevant content by keyword, country, or topic.
     - Customized Summaries: Generate country-specific or issue-based summary reports to support prompt decision-making.
-    ```
     
 - Easy to get statement information by country or presenter
-    
-    ```
      - Speaker identification :  detecting speakers by separating representatives of each countries even within the same countries.
-    ```
     
 - Better understanding with prompt and proper translation
-    
-    ```
      - Multilingual support : Auto-translation and keyword search to eliminate language barriers.
-    ```
     
 
 ### Vizario vs. Conventional Approach
