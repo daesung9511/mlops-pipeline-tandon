@@ -41,6 +41,9 @@ def log_model_device(model, model_name: str):
     except StopIteration:
         logging.info(f"{model_name} has no parameters to check.")
 
+print("CUDA available:", torch.cuda.is_available())
+print("CUDA device count:", torch.cuda.device_count())
+
 # Load Llava model and processor
 llava_processor = LlavaNextProcessor.from_pretrained("llava-hf/llava-v1.6-mistral-7b-hf")
 llava_model = LlavaNextForConditionalGeneration.from_pretrained(
