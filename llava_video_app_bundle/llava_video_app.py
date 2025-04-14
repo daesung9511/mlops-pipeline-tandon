@@ -355,7 +355,7 @@ async def ask_video_extended(
                 f"User prompt: {question}\n\n"
                 f"Selected candidate frame info (total {len(selected_candidates)} candidates):\n"
                 f"{candidate_info_str}\n"
-                "Based on the above, provide a detailed analysis and explanation of the scenes relevant to the query."
+                "Based on the above candidate information, answer the user prompt directly and provide any supporting details from the transcript or image."
             )
 
             # -------------------------------
