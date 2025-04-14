@@ -15,6 +15,7 @@ from transformers import (
     BridgeTowerProcessor, 
     BridgeTowerForImageAndTextRetrieval
 )
+import logging
 
 app = FastAPI()
 
@@ -27,6 +28,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+
+def log_model_device(model, model_name: str):
+    try:
+        # Check if at least one parameter is on CUDA
+        if next(model.parameters()).is_cuda:
+            logging.info(f"{model_name} is loaded on GPU: {next(model.parameters()).device}")
+        else:
+            logging.info(f"{model_name} is loaded on CPU")
+    except StopIteration:
+        logging.info(f"{model_name} has no parameters to check.")
+
 # Load Llava model and processor
 llava_processor = LlavaNextProcessor.from_pretrained("llava-hf/llava-v1.6-mistral-7b-hf")
 llava_model = LlavaNextForConditionalGeneration.from_pretrained(
@@ -35,6 +49,8 @@ llava_model = LlavaNextForConditionalGeneration.from_pretrained(
     low_cpu_mem_usage=True
 )
 llava_model.to("cuda" if torch.cuda.is_available() else "cpu")
+log_model_device(llava_model, "LLaVA Model")
+
 
 # ---------------------------------------------------------------------------
 # Helper functions used in the extended pipeline
@@ -271,6 +287,8 @@ async def ask_video_extended(
             bridge_model = BridgeTowerForImageAndTextRetrieval.from_pretrained("BridgeTower/bridgetower-base-itm-mlm")
             bridge_model.to(device)
             bridge_model = bridge_model.half()  # Use half precision to reduce memory usage
+            log_model_device(bridge_model, "BridgeTower Model")
+
 
             batch_images = []
             batch_texts = []
