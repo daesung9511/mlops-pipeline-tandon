@@ -1,0 +1,20 @@
+  && chmod +x ./node_modules/.bin/react-scripts \FROM node:18
+
+WORKDIR /app
+
+# npm 설정 환경변수 (옵션, 캐시 줄이기)
+ENV CI=true
+
+COPY package.json .
+COPY package-lock.json .
+
+# npm install 후 react-scripts 실행 권한 보장
+RUN npm install \
+  && chmod +x ./node_modules/.bin/react-scripts \
+  && ls -l ./node_modules/.bin/
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["npm", "start"]
