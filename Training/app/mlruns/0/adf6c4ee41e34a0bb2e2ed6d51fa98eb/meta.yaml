@@ -1,0 +1,16 @@
+artifact_uri: /app/mlruns/0/adf6c4ee41e34a0bb2e2ed6d51fa98eb/artifacts
+deleted_time: 1745598500696
+end_time: 1745598461093
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: deleted
+run_id: adf6c4ee41e34a0bb2e2ed6d51fa98eb
+run_name: able-rat-520
+run_uuid: adf6c4ee41e34a0bb2e2ed6d51fa98eb
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1745598459062
+status: 3
+tags: []
+user_id: root
