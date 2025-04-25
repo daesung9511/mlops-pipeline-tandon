@@ -4,7 +4,7 @@ yt-dlp
 pymupdf
 fuzzywuzzy
 python-Levenshtein
-webvtt
+webvtt-py
 opencv-python
 whisper
 transformers
