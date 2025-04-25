@@ -9,7 +9,6 @@ on:
   push:
     branches: [ "continuous" ]
     # Publish semver tags as releases.
-    tags: [ 'v*.*.*' ]
   pull_request:
     branches: [ "continuous" ]
 
