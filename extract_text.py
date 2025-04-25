@@ -38,3 +38,4 @@ if __name__ == "__main__":
 
     # Call the function to extract text and save it
     extract_text_from_pdf(args.input, args.output)
+    print("Text extraction completed.")
