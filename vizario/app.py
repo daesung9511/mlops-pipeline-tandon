@@ -49,7 +49,7 @@ try:
     llm = Llama(
         model_path=llama_model_path_cached, # Use the cached path
         n_gpu_layers=999, # Set > 0 if we use GPU
-        n_ctx=4096, # context window size
+        n_ctx=8192, # context window size
         verbose=False
     )
     print("Llama model loaded.")
