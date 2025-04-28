@@ -1,0 +1,15 @@
+artifact_uri: /app/mlruns/0/8419a91d78e14a81ad9dfe78c8fee076/artifacts
+end_time: 1745598533049
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 8419a91d78e14a81ad9dfe78c8fee076
+run_name: gentle-lynx-392
+run_uuid: 8419a91d78e14a81ad9dfe78c8fee076
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1745598530981
+status: 3
+tags: []
+user_id: root
