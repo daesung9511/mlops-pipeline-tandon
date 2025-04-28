@@ -1,0 +1,16 @@
+artifact_uri: /app/mlruns/0/1d73a4b71245464a85a0b4656a0f7173/artifacts
+deleted_time: 1745598500846
+end_time: 1745597772033
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: deleted
+run_id: 1d73a4b71245464a85a0b4656a0f7173
+run_name: whimsical-dove-81
+run_uuid: 1d73a4b71245464a85a0b4656a0f7173
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1745597770355
+status: 3
+tags: []
+user_id: root

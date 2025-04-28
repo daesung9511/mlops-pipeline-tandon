@@ -1,3 +1,8 @@
 bin
 lib
 pyvenv.cfg
+.idea/*/**
+.idea/**
+share/*/**
+share/**
+bridgeTower.py

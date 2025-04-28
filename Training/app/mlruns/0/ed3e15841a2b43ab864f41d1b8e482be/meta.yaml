@@ -1,0 +1,16 @@
+artifact_uri: /app/mlruns/0/ed3e15841a2b43ab864f41d1b8e482be/artifacts
+deleted_time: 1745598500699
+end_time: null
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: deleted
+run_id: ed3e15841a2b43ab864f41d1b8e482be
+run_name: bright-moth-863
+run_uuid: ed3e15841a2b43ab864f41d1b8e482be
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1745598321257
+status: 1
+tags: []
+user_id: root
