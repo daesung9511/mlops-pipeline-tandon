@@ -6,7 +6,7 @@ fuzzywuzzy
 python-Levenshtein
 webvtt-py
 opencv-python
-whisper
+openai-whisper
 transformers
 moviepy
 Pillow
