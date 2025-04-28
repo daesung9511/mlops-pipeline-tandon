@@ -5,8 +5,7 @@ import asyncio
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-# Import hf_hub_download
-from huggingface_hub import hf_hub_download # Corrected import
+from huggingface_hub import hf_hub_download
 
 import whisper
 from llama_cpp import Llama

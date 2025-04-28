@@ -1,6 +1,0 @@
-fastapi
-uvicorn
-python-multipart
-openai-whisper
-llama-cpp-python
-huggingface_hub
