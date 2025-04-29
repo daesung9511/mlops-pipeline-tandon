@@ -1,0 +1,34 @@
+
+name: tracking_service
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mlflowdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # use a volume so storage persists beyond container lifetype
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.20.2
+    container_name: mlflow
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      MLFLOW_TRACKING_URI: http://0.0.0.0:8000
+      AWS_ACCESS_KEY_ID: "your-access-key"
+      AWS_SECRET_ACCESS_KEY: "your-secret-key"
+      DEFAULT_STORAGE: "${DEFAULT_STORAGE}"
+    ports:
+      - "8000:8000"
+    command: >
+      /bin/sh -c "pip install psycopg2-binary boto3 &&
+      mlflow server --backend-store-uri postgresql://user:password@postgres/mlflowdb 
+      --artifacts-destination file://${DEFAULT_STORAGE} --serve-artifacts --host 0.0.0.0 --port 8000"
+volumes:
+    postgres_data:

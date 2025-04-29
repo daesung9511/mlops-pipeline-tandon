@@ -1,8 +1,0 @@
-lr: 3e-5
-batch_size: 8
-fusion_dim: 256
-model_name: bert-base-uncased
-data_path: /app/dataset/un_meeting_qa.json
-mlflow_uri: http://localhost:5000
-epochs: 5
-

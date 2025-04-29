@@ -1,1 +1,0 @@
-# Multimodal UN QA Project (Course-Aligned Version)
