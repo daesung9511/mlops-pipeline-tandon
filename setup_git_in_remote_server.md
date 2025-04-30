@@ -21,6 +21,18 @@ git config --global user.email "you@example.com"
 git config --global user.name "Your Name"
 ```
 
+Now you'll be able to `git clone` with ssh key. Go to repository home page, click green "Code" button, and then copy ssh option. It should be in this format: `git@github.com:repo-owner/repo-name.git`
+
+### 2-2. If you want to keep using the same key
+It can be cumbersome to generate a SSH key and upload it into github every time you start a new instance. I don't recommend this method, but you can save the key file (`id_rsa` and `id_rsa.pub` saved in `~/.ssh` in your server) and just copy and paste them into a new instance directory: `~/.ssh`
+
+But if you are just copy and pasting the raw text of file, and creating the text file with text editor with vim or nano, you have to change the permission of private key file:
+
+```bash
+chmod 400 ~/.ssh/id_rsa
+```
+
+
 ### 3. Check out to other git branches
 
 To check out the remote branch `Training` (which exists as `origin/Training`) and create a corresponding local branch, follow these steps:

@@ -1,5 +1,6 @@
-### Reference
-Link: https://www.perplexity.ai/search/i-am-using-a-chameleon-cloud-i-Rd6EG0eHTOykThcdZFLGMA#1
+# Why do we want to change SSH configuration?
+
+When we access Chameleon cloud remote server through terminal, it disconnects if there is no interaction even for a few minutes. Yes, we can reconnect to it using ssh command, pressing ↑ and find the previous command, and then run it (additionally entering a passphrase if you didn't leave it empty). However, this may be cumbersome. Instead, we can set up the wait time for SSH disconnection longer.
 
 ### Solution 1
 
@@ -40,4 +41,26 @@ Again, restart ssh service to apply the change.
 
 ```bash
 sudo systemctl restart ssh
+```
+
+
+### Solution 3
+
+In my case, neither solution 1 nor solution 2 did work.
+Instead, try configuring YOUR OWN ssh config:
+
+```bash
+# On LOCAL machine
+nano ~/.ssh/config
+```
+
+
+```bash
+Host chameleon-*
+    Hostname <your-floating-ip>
+    User cc
+    IdentityFile ~/.ssh/id_rsa_chameleon_group** # Replace it with your own key name
+    ServerAliveInterval 60    # 1-minute client keepalives
+    ServerAliveCountMax 30    # 30min total timeout
+    TCPKeepAlive yes
 ```
