@@ -4,13 +4,13 @@ yt-dlp
 pymupdf
 fuzzywuzzy
 python-Levenshtein
-webvtt
+webvtt-py
 opencv-python
-whisper
+openai-whisper
 transformers
 moviepy
 Pillow
 pytube==15.0.0
-pytubefix==0.0.7
-youtube-transcript-api==0.6.2
-pydub
+# pytubefix==0.0.7
+# youtube-transcript-api==0.6.2
+# pydub

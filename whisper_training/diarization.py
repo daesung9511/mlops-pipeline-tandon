@@ -1,6 +1,3 @@
-# !pip install openai-whisper
-# !pip install pydub
-
 import whisper
 import subprocess
 from whisper.utils import get_writer
