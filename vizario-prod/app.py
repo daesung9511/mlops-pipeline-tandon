@@ -99,6 +99,7 @@ app = FastAPI(
 
 # --- Define Response Models using Pydantic ---
 class BaseMeetingResponse(BaseModel):
+    interaction_id: str = Field(..., description="The unique ID for this interaction.")
     filename: str = Field(..., description="The name of the uploaded audio file.")
     transcript: str = Field(..., description="The generated transcript from the audio.")
     processing_task: str = Field(..., description="Indicates if summarization or Q&A was performed.")
@@ -268,45 +269,48 @@ Summary:"""
         # --- Initiate Data Saving to MinIO (NEW - as background tasks) ---
         # Check if the s3_client was successfully initialized globally
         if s3_client:
-             processing_uuid = str(uuid.uuid4()) # Generate a unique ID for this processing event
-             base_filename = os.path.splitext(audio_file.filename)[0] # Get filename without extension
+            processing_uuid = str(uuid.uuid4()) # Generate a unique ID for this processing event
+            base_filename = os.path.splitext(audio_file.filename)[0] # Get filename without extension
 
-             # Define object keys
-             audio_object_key = f"audio/{processing_uuid}/{base_filename}{os.path.splitext(audio_file.filename)[1]}"
-             transcript_object_key = f"transcripts/{processing_uuid}/{base_filename}.txt"
-             output_type_dir = "answers" if query else "summaries"
-             output_object_key = f"{output_type_dir}/{processing_uuid}/{base_filename}_output.txt"
-             metadata_object_key = f"metadata/{processing_uuid}/metadata.json"
+            # Define object keys
+            audio_object_key = f"audio/{processing_uuid}/{base_filename}{os.path.splitext(audio_file.filename)[1]}"
+            transcript_object_key = f"transcripts/{processing_uuid}/{base_filename}.txt"
+            output_type_dir = "answers" if query else "summaries"
+            output_object_key = f"{output_type_dir}/{processing_uuid}/{base_filename}_output.txt"
+            metadata_object_key = f"metadata/{processing_uuid}/metadata.json"
 
-             # Prepare metadata
-             metadata = {
-                 "processing_uuid": processing_uuid,
-                 "original_filename": audio_file.filename,
-                 "query": query,
-                 "processing_task": processing_task,
-                 "audio_s3_key": audio_object_key,
-                 "transcript_s3_key": transcript_object_key,
-                 "output_s3_key": output_object_key,
-                 "timestamp_utc": datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-             }
+            # Prepare metadata
+            metadata = {
+                "processing_uuid": processing_uuid,
+                "original_filename": audio_file.filename,
+                "query": query,
+                "processing_task": processing_task,
+                "audio_s3_key": audio_object_key,
+                "transcript_s3_key": transcript_object_key,
+                "output_s3_key": output_object_key,
+                "timestamp_utc": datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+            }
 
-             # Create background tasks for saving. These will run concurrently.
-             # Use asyncio.create_task to run these without blocking the endpoint response.
-             asyncio.create_task(save_audio_to_minio(s3_client, MINIO_BUCKET_NAME, audio_object_key, temp_audio_file, audio_file.content_type))
-             asyncio.create_task(save_text_to_minio(s3_client, MINIO_BUCKET_NAME, transcript_object_key, transcript_text))
-             asyncio.create_task(save_text_to_minio(s3_client, MINIO_BUCKET_NAME, output_object_key, result_text))
-             asyncio.create_task(save_metadata_to_minio(s3_client, MINIO_BUCKET_NAME, metadata_object_key, metadata))
+            # Create background tasks for saving. These will run concurrently.
+            # Use asyncio.create_task to run these without blocking the endpoint response.
+            asyncio.create_task(save_audio_to_minio(s3_client, MINIO_BUCKET_NAME, audio_object_key, temp_audio_file, audio_file.content_type))
+            asyncio.create_task(save_text_to_minio(s3_client, MINIO_BUCKET_NAME, transcript_object_key, transcript_text))
+            asyncio.create_task(save_text_to_minio(s3_client, MINIO_BUCKET_NAME, output_object_key, result_text))
+            asyncio.create_task(save_metadata_to_minio(s3_client, MINIO_BUCKET_NAME, metadata_object_key, metadata))
 
-             print(f"Initiated background saves for processing_uuid: {processing_uuid}")
+            print(f"Initiated background saves for processing_uuid: {processing_uuid}")
 
         else:
-             print("MinIO client not initialized. Skipping data save to MinIO.")
+            print("MinIO client not initialized. Skipping data save to MinIO.")
+            if not processing_uuid:
+                processing_uuid = "-1"
 
 
         # --- Return Response ---
         # The endpoint returns immediately after initiating background tasks
         if query:
             return MeetingQAResponse(
+                interaction_id=processing_uuid,
                 filename=audio_file.filename,
                 transcript=transcript_text,
                 processing_task=processing_task,
@@ -315,6 +319,7 @@ Summary:"""
             )
         else:
              return MeetingSummaryResponse(
+                interaction_id=processing_uuid,
                 filename=audio_file.filename,
                 transcript=transcript_text,
                 processing_task=processing_task,
@@ -334,3 +339,66 @@ Summary:"""
         if temp_audio_file and os.path.exists(temp_audio_file):
              print(f"Processing complete. Temporary file {temp_audio_file} will be cleaned up by finally block.")
              os.remove(temp_audio_file)
+
+# --- Endpoint for Receiving Feedback (NEW) ---
+@app.post("/feedback/rating")
+async def submit_feedback_rating(feedback: FeedbackRequest):
+    """
+    Receives user feedback rating for a previously processed meeting interaction.
+    Updates the metadata stored in Minio for the given interaction ID.
+    """
+    if not s3_client:
+        raise HTTPException(status_code=500, detail="MinIO client not initialized. Cannot save feedback.")
+
+    # Construct the S3 key for the metadata file using the interaction_id
+    # This assumes your metadata object key pattern is metadata/{interaction_id}/metadata.json
+    metadata_object_key = f"metadata/{feedback.interaction_id}/metadata.json"
+    bucket_name = MINIO_BUCKET_NAME # Get bucket name from config
+
+    print(f"Received feedback for interaction ID: {feedback.interaction_id}")
+    print(f"Helpful: {feedback.helpful}, Feedback Text: {feedback.feedback_text}")
+
+    loop = asyncio.get_event_loop() # Get the current event loop
+
+    try:
+        # 1. Retrieve the existing metadata object from MinIO
+        print(f"Attempting to retrieve metadata from MinIO: {metadata_object_key}")
+        response = await loop.run_in_executor(
+            None,
+            lambda: s3_client.get_object(Bucket=bucket_name, Key=metadata_object_key)
+        )
+        existing_metadata_bytes = await loop.run_in_executor(None, lambda: response['Body'].read())
+        existing_metadata = json.loads(existing_metadata_bytes.decode('utf-8'))
+        print("Metadata retrieved successfully.")
+
+        # 2. Update the metadata with the new feedback
+        existing_metadata["user_rating_helpful"] = feedback.helpful
+        existing_metadata["user_feedback_text"] = feedback.feedback_text
+        existing_metadata["feedback_timestamp_utc"] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ') # Add timestamp for feedback
+
+        # 3. Save the updated metadata back to MinIO (overwrite the old object)
+        updated_metadata_bytes = json.dumps(existing_metadata, indent=2).encode('utf-8')
+        print(f"Attempting to save updated metadata to MinIO: {metadata_object_key}")
+        await loop.run_in_executor(
+            None,
+            lambda: s3_client.put_object(
+                Bucket=bucket_name,
+                Key=metadata_object_key,
+                Body=updated_metadata_bytes,
+                ContentType='application/json'
+            )
+        )
+        print("Updated metadata saved successfully.")
+
+        return {"message": f"Feedback received and saved for interaction ID: {feedback.interaction_id}"}
+
+    except s3_client.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == 'NoSuchKey':
+            print(f"Error: Metadata object not found for interaction ID: {feedback.interaction_id}")
+            raise HTTPException(status_code=404, detail=f"Interaction with ID {feedback.interaction_id} not found.")
+        else:
+            print(f"An S3 error occurred while processing feedback: {e}")
+            raise HTTPException(status_code=500, detail=f"An error occurred while saving feedback: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred while processing feedback: {e}")
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred while processing feedback: {e}")

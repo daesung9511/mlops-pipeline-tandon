@@ -10,7 +10,7 @@ docker network create production_net
 Then, bring up the services:
 ```
 # runs on node-eval-loop
-docker compose -f eval-loop-chi/docker/docker-compose-production.yaml up -d
+docker compose -f docker/docker-compose-prod.yaml up -d
 ```
 
 Open the MinIO object store web UI - in a browser, open
