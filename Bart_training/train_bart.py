@@ -79,13 +79,14 @@ training_args = TrainingArguments(
     learning_rate=5e-5,
     per_device_train_batch_size=2,
     per_device_eval_batch_size=2,
-    num_train_epochs=3,
+    num_train_epochs=5,
     weight_decay=0.01,
     save_total_limit=2,
     logging_dir="/workspace/logs",
     logging_steps=50,
     fp16=True,
     report_to="wandb",
+    run_name="qmsum-bart(epoch5)",
     eval_accumulation_steps=2,
 )
 
