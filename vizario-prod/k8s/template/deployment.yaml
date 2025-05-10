@@ -16,5 +16,5 @@ spec:
         - name: fastapi
           image: ghcr.io/daesung9511/mlops-pipeline-tandon:production
           ports:
-            - containerPort: 80
+            - containerPort: 8082
 
