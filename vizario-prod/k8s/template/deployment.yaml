@@ -17,5 +17,7 @@ spec:
         - name: fastapi
           image: ghcr.io/daesung9511/mlops-pipeline-tandon:production
           ports:
-            - containerPort: 8082
+            - containerPort: 80
+      nodeSelector:
+        kubernetes.io/hostname: node1  # ⚠️ make sure this label matches your real node name
 

@@ -8,7 +8,8 @@ spec:
     app: fastapi
   ports:
     - protocol: TCP
-      port: 80
-      targetPort: 80
-  type: LoadBalancer
+      port: 80           # Service port
+      targetPort: 80     # Must match containerPort
+      nodePort: 32080    # Will be reachable via node1's floating IP
+  type: NodePort
 
