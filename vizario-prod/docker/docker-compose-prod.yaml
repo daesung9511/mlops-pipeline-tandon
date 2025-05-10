@@ -87,6 +87,25 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
 
+  jupyter:
+    image: quay.io/jupyter/minimal-notebook:latest
+    container_name: jupyter
+    ports:
+      - "8888:8888"
+    volumes:
+      - /home/cc/mlops-pipeline-tandon/vizario-prod/workspace:/home/jovyan/work # mount workspace
+    environment:
+      - MINIO_URL=http://minio:9000 
+      - MINIO_USER=your-access-key
+      - MINIO_PASSWORD=your-secret-key
+      - MINIO_BUCKET_NAME=production
+      - LABEL_STUDIO_URL=http://label-studio:8080
+      - LABEL_STUDIO_USER_TOKEN=ab9927067c51ff279d340d7321e4890dc2841c4a
+    networks:
+      - production_net
+    command: >
+      bash -c "python3 -m pip install boto3 requests && start-notebook.sh"
+    
 networks:
   production_net:
     external: true
