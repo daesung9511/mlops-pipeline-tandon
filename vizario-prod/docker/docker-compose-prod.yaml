@@ -4,7 +4,7 @@ services:
   fastapi_server:
     build:
       context: /home/cc/mlops-pipeline-tandon/vizario-prod
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile 
     container_name: fastapi_server
     ports:
       - "8000:8000"  # Map host port 8000 to container port 8000 for HTTP requests
@@ -35,7 +35,7 @@ services:
     command: server /data --console-address ':9001' # Start the Minio server
     networks:
       - production_net
-
+    
   minio-init:
     image: minio/mc
     container_name: minio_init
