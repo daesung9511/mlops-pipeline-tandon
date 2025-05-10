@@ -3,7 +3,7 @@ name: production
 services:
   fastapi_server:
     build:
-      context: /home/cc/vizario-prod
+      context: /home/cc/mlops-pipeline-tandon/vizario-prod
       dockerfile: Dockerfile 
     container_name: fastapi_server
     ports:
@@ -34,20 +34,17 @@ services:
     command: server /data --console-address ':9001' # Start the Minio server
     networks:
       - production_net
-
+    
   minio-init:
-    image: minio/mc:latest # consider pinning to a specific version
+    image: minio/mc
     container_name: minio_init
     depends_on:
       - minio
-    restart: "no" # Do not restart this container after it completes its task
-    entrypoint: > # Command to run inside the container
+    restart: "no"
+    entrypoint: >
       /bin/sh -c "
-      # Wait a bit longer to ensure Minio is fully ready if healthcheck isn't strict enough
       sleep 5 &&
-      # Set up an alias for the Minio server
       mc alias set myminio http://minio:9000 your-access-key your-secret-key &&
-      # Create the 'production' bucket if it doesn't exist (-p for --api auto-select)
       mc mb -p myminio/production || echo 'Bucket already exists'
       "
     networks:
