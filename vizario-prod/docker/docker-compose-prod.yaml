@@ -34,7 +34,7 @@ services:
     volumes:
       # Use a named volume for persistent Minio data storage managed by Docker
       - minio_data:/data
-      # - /mnt/block/minio_data:/data
+      # - /mnt/block/minio_data:/data  # uncomment to connect to block storage
     command: server /data --console-address ':9001' # Start the Minio server
     networks:
       - production_net

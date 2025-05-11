@@ -12,6 +12,8 @@ import boto3
 import uuid
 from transformers import BartTokenizer, BartForConditionalGeneration
 import torch
+from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
+from starlette.responses import Response
 
 # --- MinIO Configuration and Client Initialization ---
 MINIO_URL = os.environ.get('MINIO_URL') # e.g. 'http://minio:9000'
@@ -114,6 +116,25 @@ app = FastAPI(
     description="API to process meeting audio using Whisper for transcription and Bart for summarization or question answering.",
     version="0.1.0"
 )
+
+REQUEST_COUNT = Counter("http_requests_total", "Total HTTP requests")
+
+# Middleware to count every request
+@app.middleware("http")
+async def count_requests(request: Request, call_next):
+    REQUEST_COUNT.inc()
+    return await call_next(request)
+
+@app.get("/")
+async def root():
+    return {"message": "Hello from FastAPI"}
+
+# Prometheus metrics endpoint
+@app.get("/metrics")
+async def metrics():
+    data = generate_latest()
+    return Response(content=data, media_type=CONTENT_TYPE_LATEST)
+
 
 # --- Define Response Models using Pydantic ---
 class BaseMeetingResponse(BaseModel):
