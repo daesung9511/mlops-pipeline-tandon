@@ -5,3 +5,5 @@ openai-whisper==20240930
 llama-cpp-python==0.3.8
 huggingface-hub==0.30.2
 boto3
+starlette==0.36.3         # Matches FastAPI 0.110.0 dependencies
+prometheus_client==0.20.0 # Actively maintained, supports all core metrics
