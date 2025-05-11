@@ -16,6 +16,7 @@ spec:
       containers:
         - name: fastapi
           image: ghcr.io/daesung9511/mlops-pipeline-tandon:production
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
       nodeSelector:
