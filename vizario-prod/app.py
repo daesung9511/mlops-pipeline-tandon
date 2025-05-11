@@ -57,48 +57,17 @@ BART_MODEL_PATH = os.environ.get('BART_MODEL_PATH', '/workspace/models/facebook/
 # --- Initialize Models ---
 # Load models globally on application startup with error handling
 whisper_model = None
-# Removed Llama variables
-# llm = None
-# llama_model_path_cached = None # To store the path where the model is cached
-
-# Added Bart variables
 bart_tokenizer = None
 bart_model = None
 bart_device = "cuda" if torch.cuda.is_available() else "cpu" # Use GPU if available
 
 try:
-    # print(f"Loading Whisper model: {WHISPER_MODEL_SIZE}...")
-    # whisper_model = whisper.load_model(WHISPER_MODEL_SIZE)
     whisper_model = whisper.load_model("WHISPER_MODEL_PATH")
     print("Whisper model loaded.")
 except Exception as e:
     print(f"Error loading Whisper model: {e}")
-    # Handle this error in the endpoint (already have checks there)
 
-# Removed Llama loading block
-# try:
-#     print(f"Attempting to download Llama model '{HF_FILE_NAME}' from '{HF_REPO_ID}'...")
-#     # hf_hub_download caches the model, subsequent calls are fast
-#     llama_model_path_cached = hf_hub_download(
-#         repo_id=HF_REPO_ID,
-#         filename=HF_FILE_NAME
-#     )
-#     print(f"Llama model downloaded/cached to: {llama_model_path_cached}")
-
-#     print("Loading Llama model...")
-#     # n_gpu_layers, n_ctx, etc. - adjust based on your model and hardware
-#     llm = Llama(
-#         model_path=llama_model_path_cached, # Use the cached path
-#         n_gpu_layers=999, # Set > 0 if we use GPU
-#         n_ctx=4096, # context window size (FIXME: MIGHT BE TOO SMALL)
-#         verbose=False
-#     )
-#     print("Llama model loaded.")
-# except Exception as e:
-#     print(f"Error downloading or loading Llama model: {e}")
-#     llm = None # Set to None if loading fails
-
-# Added Bart loading block
+# Load bart model
 try:
     print(f"Loading Bart model from local path: {BART_MODEL_PATH}...")
     bart_tokenizer = BartTokenizer.from_pretrained(BART_MODEL_PATH)
@@ -243,7 +212,6 @@ async def process_meeting_audio(
         MeetingSummaryResponse | MeetingQAResponse: The response containing transcript and summary or answer.
     """
     # Check if models were loaded successfully on startup
-    # Updated check for Bart model and tokenizer
     if not whisper_model:
         raise HTTPException(status_code=500, detail="Whisper model failed to load on startup.")
     if not bart_model or not bart_tokenizer:
@@ -285,7 +253,6 @@ async def process_meeting_audio(
         else: # No query, perform summarization
             processing_task = "Summarization"
             print("Performing summarization using Bart.")
-            # Simple summarization input format
             input_string = f"Summarize the following meeting transcript: {transcript_text}"
             max_output_length = 400 # Limit output length for summary
 
@@ -302,7 +269,7 @@ async def process_meeting_audio(
         inputs = {k: v.to(bart_device) for k, v in inputs.items()}
 
         # Generate output using Bart model
-        # Run blocking model inference in an executor
+        # Run model inference in an executor for concurrency
         generate_output = await loop.run_in_executor(
             None,
             lambda: bart_model.generate(
@@ -401,7 +368,7 @@ async def submit_feedback_rating(feedback: FeedbackRequest):
         raise HTTPException(status_code=500, detail="MinIO client not initialized. Cannot save feedback.")
 
     # Construct the S3 key for the metadata file using the interaction_id
-    # This assumes your metadata object key pattern is metadata/{interaction_id}/metadata.json
+    # This assumes the metadata object key pattern is metadata/{interaction_id}/metadata.json
     metadata_object_key = f"metadata/{feedback.interaction_id}/metadata.json"
     bucket_name = MINIO_BUCKET_NAME # Get bucket name from config
 
@@ -411,7 +378,7 @@ async def submit_feedback_rating(feedback: FeedbackRequest):
     loop = asyncio.get_event_loop() # Get the current event loop
 
     try:
-        # 1. Retrieve the existing metadata object from MinIO
+        # Retrieve the existing metadata object from MinIO
         print(f"Attempting to retrieve metadata from MinIO: {metadata_object_key}")
         response = await loop.run_in_executor(
             None,
@@ -421,12 +388,12 @@ async def submit_feedback_rating(feedback: FeedbackRequest):
         existing_metadata = json.loads(existing_metadata_bytes.decode('utf-8'))
         print("Metadata retrieved successfully.")
 
-        # 2. Update the metadata with the new feedback
+        # Update the metadata with the new feedback
         existing_metadata["user_rating_helpful"] = feedback.helpful
         existing_metadata["user_feedback_text"] = feedback.feedback_text
         existing_metadata["feedback_timestamp_utc"] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ') # Add timestamp for feedback
 
-        # 3. Save the updated metadata back to Minio (overwrite the old object)
+        # Save the updated metadata back to Minio (overwrite the old object)
         updated_metadata_bytes = json.dumps(existing_metadata, indent=2).encode('utf-8')
         print(f"Attempting to save updated metadata to MinIO: {metadata_object_key}")
         await loop.run_in_executor(
