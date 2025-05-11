@@ -3,20 +3,19 @@ from datasets import load_dataset
 import evaluate
 import wandb
 import numpy as np
-wandb.login()
-print(TrainingArguments.__module__)
-# 1. Load preprocessed dataset
+
+# Load dataset from JSON files
 dataset = load_dataset("json", data_files={
     "train": "/workspace/QMSum-main/data/ALL/jsonl/train.jsonl",
     "validation": "/workspace/QMSum-main/data/ALL/jsonl/val.jsonl"
 })
 
-# 2. Load BART model
+# Load tokenizer and model
 model_name = "facebook/bart-large"
 tokenizer = BartTokenizer.from_pretrained(model_name)
 model = BartForConditionalGeneration.from_pretrained(model_name)
 
-# 3. Preprocessing function
+# Preprocessing function
 def preprocess_function(examples):
     inputs = ["question: " + q + " context: " + c for q, c in zip(examples["query"], examples["meeting_transcripts"])]
     model_inputs = tokenizer(inputs, max_length=1024, truncation=True, padding="max_length")
@@ -26,21 +25,19 @@ def preprocess_function(examples):
     model_inputs["labels"] = labels["input_ids"]
     return model_inputs
 
-# 4. Tokenize
+# Tokenize dataset
 tokenized_datasets = dataset.map(preprocess_function, batched=True)
 
-# 5. Evaluation metric
-#rouge = evaluate.load("rouge")
-
+# Load evaluation metrics
 rouge = evaluate.load("rouge")
 bleu = evaluate.load("bleu")
 meteor = evaluate.load("meteor")
 bertscore = evaluate.load("bertscore")
 
+# Define metric computation function
 def compute_metrics(eval_preds):
     preds, labels = eval_preds
 
-    # logits → 예측 token ID로 변환
     if isinstance(preds, tuple):
         preds = preds[0]
     if isinstance(preds, np.ndarray) and preds.ndim == 3:
@@ -55,7 +52,7 @@ def compute_metrics(eval_preds):
     decoded_labels = [label.strip() for label in decoded_labels]
 
     result_rouge = rouge.compute(predictions=decoded_preds, references=decoded_labels, use_stemmer=True)
-    result_bleu = bleu.compute(predictions=decoded_preds, references=[[ref] for ref in decoded_labels])  # BLEU는 nested ref
+    result_bleu = bleu.compute(predictions=decoded_preds, references=[[ref] for ref in decoded_labels])
     result_meteor = meteor.compute(predictions=decoded_preds, references=decoded_labels)
     result_bertscore = bertscore.compute(predictions=decoded_preds, references=decoded_labels, lang="en")
 
@@ -71,7 +68,8 @@ def compute_metrics(eval_preds):
     }
 
     return result
-# 6. TrainingArguments
+
+# Define training arguments
 training_args = TrainingArguments(
     output_dir="/workspace/results",
     eval_strategy="epoch",
@@ -83,14 +81,14 @@ training_args = TrainingArguments(
     weight_decay=0.01,
     save_total_limit=2,
     logging_dir="/workspace/logs",
-    logging_steps=50,
+    logging_steps=10,
     fp16=True,
     report_to="wandb",
-    run_name="qmsum-bart(epoch5)",
+    run_name="1) BART_1GPU",  # Match run name with identifier
     eval_accumulation_steps=2,
 )
 
-# 7. Trainer
+# Initialize Hugging Face Trainer
 trainer = Trainer(
     model=model,
     args=training_args,
@@ -100,7 +98,5 @@ trainer = Trainer(
     compute_metrics=compute_metrics,
 )
 
-# 8. Train!
+# Start training
 trainer.train()
-
-

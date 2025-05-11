@@ -13,21 +13,18 @@ import numpy as np
 
 
 def train_func():
-    # wandb login
-    wandb.login(key="a1ec15498e82069e6f683bbf80a5d0764428005e")
-
-    # Load dataset
+    # Load the dataset from JSON files
     dataset = load_dataset("json", data_files={
         "train": "/workspace/QMSum-main/data/ALL/jsonl/train.jsonl",
         "validation": "/workspace/QMSum-main/data/ALL/jsonl/val.jsonl"
     })
 
-    # Load tokenizer and model
-    model_name = "facebook/bart-large"
-    tokenizer = BartTokenizer.from_pretrained(model_name)
-    model = BartForConditionalGeneration.from_pretrained(model_name)
+    # Load the tokenizer and pre-trained model
+    model_path = "/workspace/models/facebook/bart-large"
+    tokenizer = BartTokenizer.from_pretrained(model_path)
+    model = BartForConditionalGeneration.from_pretrained(model_path)
 
-    # Preprocessing
+    # Define the preprocessing function for inputs and targets
     def preprocess_function(examples):
         inputs = ["question: " + q + " context: " + c for q, c in zip(examples["query"], examples["meeting_transcripts"])]
         model_inputs = tokenizer(inputs, max_length=1024, truncation=True, padding="max_length")
@@ -37,17 +34,18 @@ def train_func():
         model_inputs["labels"] = labels["input_ids"]
         return model_inputs
 
+    # Apply preprocessing to the dataset
     tokenized_datasets = dataset.map(preprocess_function, batched=True)
 
-    # Evaluation metrics
+    # Load evaluation metrics
     rouge = evaluate.load("rouge")
     bleu = evaluate.load("bleu")
     meteor = evaluate.load("meteor")
     bertscore = evaluate.load("bertscore")
 
+    # Define the evaluation metric computation function
     def compute_metrics(eval_preds):
         preds, labels = eval_preds
-
         if isinstance(preds, tuple):
             preds = preds[0]
         if isinstance(preds, np.ndarray) and preds.ndim == 3:
@@ -77,24 +75,27 @@ def train_func():
         }
         return result
 
+    # Define training arguments with gradient accumulation (8 steps)
     training_args = TrainingArguments(
         output_dir="/workspace/results_ray",
         eval_strategy="epoch",
         save_strategy="epoch",
         learning_rate=5e-5,
-        per_device_train_batch_size=2,
-        per_device_eval_batch_size=2,
+        per_device_train_batch_size=8,
+        per_device_eval_batch_size=8,
+        gradient_accumulation_steps=8,
         num_train_epochs=5,
         weight_decay=0.01,
         save_total_limit=2,
         logging_dir="/workspace/logs_ray",
-        logging_steps=50,
+        logging_steps=10,
         fp16=True,
         report_to="wandb",
-        run_name="qmsum-bart-ray(epoch5)",
+        run_name="2-4) Ray_2GPU_accum8",  # Must match RunConfig.name
         eval_accumulation_steps=2,
     )
 
+    # Initialize Hugging Face Trainer
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -104,17 +105,19 @@ def train_func():
         compute_metrics=compute_metrics,
     )
 
+    # Start training
     trainer.train()
 
 
 if __name__ == "__main__":
+    # Initialize Ray and launch TorchTrainer with 2 GPU workers
     ray.init()
 
     trainer = TorchTrainer(
         train_loop_per_worker=train_func,
-        scaling_config=ScalingConfig(num_workers=1, use_gpu=True),
+        scaling_config=ScalingConfig(num_workers=2, use_gpu=True),
         run_config=RunConfig(
-            name="qmsum-ray-wandb",
+            name="2-4) Ray_2GPU_accum8",  # Must match run_name
             checkpoint_config=CheckpointConfig(num_to_keep=2),
         )
     )
