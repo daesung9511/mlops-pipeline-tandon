@@ -2,16 +2,16 @@ import os
 import tempfile
 import shutil
 import asyncio
-import json # Added for metadata saving
-from datetime import datetime # Added for metadata timestamp
+import json
+from datetime import datetime
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-from huggingface_hub import hf_hub_download
 import whisper
-from llama_cpp import Llama
 import boto3
 import uuid
+from transformers import BartTokenizer, BartForConditionalGeneration
+import torch
 
 # --- MinIO Configuration and Client Initialization ---
 MINIO_URL = os.environ.get('MINIO_URL') # e.g. 'http://minio:9000'
@@ -46,18 +46,22 @@ else:
 # Choose a Whisper model size (e.g., 'base', 'small', 'medium', 'large')
 WHISPER_MODEL_SIZE = "base"
 
-# --- Hugging Face Llama Model Configuration ---
-# These are placeholders and will be replaced with trained model paths
-# Replace with the repo ID and filename of the GGUF model you want to use from Hugging Face
-# You can find GGUF models from users like 'TheBloke'
-HF_REPO_ID = "TheBloke/Llama-2-7B-Chat-GGUF" # Example: Llama-2 7B Chat model
-HF_FILE_NAME = "llama-2-7b-chat.Q4_K_M.gguf" # Example: A specific quantized GGUF file
+# --- Bart Model Configuration (Local Path) ---
+# Path to your locally downloaded/trained Bart model
+# Default is based on the provided evaluation code
+BART_MODEL_PATH = os.environ.get('BART_MODEL_PATH', '/workspace/models/facebook/bart-large')
 
 # --- Initialize Models ---
 # Load models globally on application startup with error handling
 whisper_model = None
-llm = None
-llama_model_path_cached = None # To store the path where the model is cached
+# Removed Llama variables
+# llm = None
+# llama_model_path_cached = None # To store the path where the model is cached
+
+# Added Bart variables
+bart_tokenizer = None
+bart_model = None
+bart_device = "cuda" if torch.cuda.is_available() else "cpu" # Use GPU if available
 
 try:
     print(f"Loading Whisper model: {WHISPER_MODEL_SIZE}...")
@@ -67,33 +71,45 @@ except Exception as e:
     print(f"Error loading Whisper model: {e}")
     # Handle this error in the endpoint (already have checks there)
 
-try:
-    print(f"Attempting to download Llama model '{HF_FILE_NAME}' from '{HF_REPO_ID}'...")
-    # hf_hub_download caches the model, subsequent calls are fast
-    llama_model_path_cached = hf_hub_download(
-        repo_id=HF_REPO_ID,
-        filename=HF_FILE_NAME
-    )
-    print(f"Llama model downloaded/cached to: {llama_model_path_cached}")
+# Removed Llama loading block
+# try:
+#     print(f"Attempting to download Llama model '{HF_FILE_NAME}' from '{HF_REPO_ID}'...")
+#     # hf_hub_download caches the model, subsequent calls are fast
+#     llama_model_path_cached = hf_hub_download(
+#         repo_id=HF_REPO_ID,
+#         filename=HF_FILE_NAME
+#     )
+#     print(f"Llama model downloaded/cached to: {llama_model_path_cached}")
 
-    print("Loading Llama model...")
-    # n_gpu_layers, n_ctx, etc. - adjust based on your model and hardware
-    llm = Llama(
-        model_path=llama_model_path_cached, # Use the cached path
-        n_gpu_layers=999, # Set > 0 if we use GPU
-        n_ctx=4096, # context window size (FIXME: MIGHT BE TOO SMALL)
-        verbose=False
-    )
-    print("Llama model loaded.")
+#     print("Loading Llama model...")
+#     # n_gpu_layers, n_ctx, etc. - adjust based on your model and hardware
+#     llm = Llama(
+#         model_path=llama_model_path_cached, # Use the cached path
+#         n_gpu_layers=999, # Set > 0 if we use GPU
+#         n_ctx=4096, # context window size (FIXME: MIGHT BE TOO SMALL)
+#         verbose=False
+#     )
+#     print("Llama model loaded.")
+# except Exception as e:
+#     print(f"Error downloading or loading Llama model: {e}")
+#     llm = None # Set to None if loading fails
+
+# Added Bart loading block
+try:
+    print(f"Loading Bart model from local path: {BART_MODEL_PATH}...")
+    bart_tokenizer = BartTokenizer.from_pretrained(BART_MODEL_PATH)
+    bart_model = BartForConditionalGeneration.from_pretrained(BART_MODEL_PATH).to(bart_device)
+    print(f"Bart model loaded to device: {bart_device}")
 except Exception as e:
-    print(f"Error downloading or loading Llama model: {e}")
-    llm = None # Set to None if loading fails
+    print(f"Error loading Bart model from local path '{BART_MODEL_PATH}': {e}")
+    bart_tokenizer = None
+    bart_model = None
 
 
 # --- FastAPI App ---
 app = FastAPI(
     title="Vizario: Meeting Summarization and Q&A",
-    description="API to process meeting audio using Whisper for transcription and Llama for summarization or question answering.",
+    description="API to process meeting audio using Whisper for transcription and Bart for summarization or question answering.",
     version="0.1.0"
 )
 
@@ -111,7 +127,7 @@ class MeetingQAResponse(BaseMeetingResponse):
      query: str = Field(..., description="The user's question about the transcript.")
      answer: str = Field(..., description="The answer to the query based on the transcript.")
 
-class FeedbackRequest(BaseModel):   # Define Request Model for Feedback 
+class FeedbackRequest(BaseModel):   # Define Request Model for Feedback
     interaction_id: str = Field(..., description="The unique ID of the interaction being rated.")
     helpful: bool = Field(..., description="Whether the response was helpful (True) or unhelpful (False).")
     feedback_text: str | None = Field(None, description="Optional text feedback from the user.")
@@ -192,7 +208,7 @@ async def process_meeting_audio(
 ):
     """
     Processes an uploaded audio file to generate a transcript using Whisper
-    and then either summarizes the transcript or answers a question using Llama.
+    and then either summarizes the transcript or answers a question using Bart.
     Saves results and original audio to MinIO in the background.
 
     Args:
@@ -204,13 +220,15 @@ async def process_meeting_audio(
         MeetingSummaryResponse | MeetingQAResponse: The response containing transcript and summary or answer.
     """
     # Check if models were loaded successfully on startup
+    # Updated check for Bart model and tokenizer
     if not whisper_model:
         raise HTTPException(status_code=500, detail="Whisper model failed to load on startup.")
-    if not llm:
-         raise HTTPException(status_code=500, detail=f"Llama model failed to load on startup. Check HF_REPO_ID '{HF_REPO_ID}' and HF_FILE_NAME '{HF_FILE_NAME}'.")
+    if not bart_model or not bart_tokenizer:
+         raise HTTPException(status_code=500, detail=f"Bart model or tokenizer failed to load from path '{BART_MODEL_PATH}' on startup.")
 
     # --- Save uploaded audio to a temporary file ---
     temp_audio_file = None # Declare before try block
+    processing_uuid = "-1" # Default in case MinIO is not initialized
     try:
         print(f"Saving uploaded file {audio_file.filename} temporarily...")
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
@@ -229,42 +247,52 @@ async def process_meeting_audio(
         transcript_text = transcript_result["text"]
         print("Transcription complete.")
 
-        # --- Process with Llama (Summarization or Q&A) ---
-        llama_output = None
+        # --- Process with Bart (Summarization or Q&A) ---
         result_text = ""
         processing_task = "Summarization" # Default task
+        input_string = ""
+        max_output_length = 0
 
         if query:
             processing_task = "Question Answering"
-            print(f"Performing Q&A with query: '{query}'")
-            prompt = f"""Based on the following meeting transcript, answer the question concisely:
-
-Transcript:
-{transcript_text}
-
-Question: {query}
-Answer:"""
-            llama_output = await loop.run_in_executor(
-                None,
-                lambda: llm(prompt, max_tokens=256, stop=["\n", "Question:"], temperature=0.1)
-            )
-            result_text = llama_output["choices"][0]["text"].strip()
-
+            print(f"Performing Q&A with query: '{query}' using Bart.")
+            # Input format based on QMSum evaluation code
+            input_string = f"question: {query} context: {transcript_text}"
+            max_output_length = 200 # Limit output length for answer
         else: # No query, perform summarization
-            processing_task = "Summarization" # Ensure it's set consistently
-            print("Performing summarization.")
-            prompt = f"""Summarize the following meeting transcript, highlighting key topics and decisions:
+            processing_task = "Summarization"
+            print("Performing summarization using Bart.")
+            # Simple summarization input format
+            input_string = f"Summarize the following meeting transcript: {transcript_text}"
+            max_output_length = 400 # Limit output length for summary
 
-Transcript:
-{transcript_text}
+        print(f"Bart input string (first 200 chars): {input_string[:200]}...")
 
-Summary:"""
-            llama_output = await loop.run_in_executor(
-                None,
-                lambda: llm(prompt, max_tokens=512, stop=["\nTranscript:"], temperature=0.7)
+        # Tokenize input string
+        inputs = bart_tokenizer(
+            input_string,
+            return_tensors="pt",
+            max_length=bart_tokenizer.model_max_length, # Use model's max length
+            truncation=True
+        )
+        # Move input tensors to the same device as the model
+        inputs = {k: v.to(bart_device) for k, v in inputs.items()}
+
+        # Generate output using Bart model
+        # Run blocking model inference in an executor
+        generate_output = await loop.run_in_executor(
+            None,
+            lambda: bart_model.generate(
+                **inputs,
+                max_length=max_output_length,
+                num_beams=4, # Example beam search parameter
+                early_stopping=True
             )
-            result_text = llama_output["choices"][0]["text"].strip()
+        )
 
+        # Decode the generated output
+        result_text = bart_tokenizer.decode(generate_output[0], skip_special_tokens=True)
+        print(f"Bart processing complete. Result: {result_text[:200]}...") # Print first 200 chars of result
 
         # --- Initiate Data Saving to MinIO (NEW - as background tasks) ---
         # Check if the s3_client was successfully initialized globally
@@ -288,7 +316,8 @@ Summary:"""
                 "audio_s3_key": audio_object_key,
                 "transcript_s3_key": transcript_object_key,
                 "output_s3_key": output_object_key,
-                "timestamp_utc": datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+                "timestamp_utc": datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+                "bart_model_path": BART_MODEL_PATH # Add model path to metadata
             }
 
             # Create background tasks for saving. These will run concurrently.
@@ -302,9 +331,7 @@ Summary:"""
 
         else:
             print("MinIO client not initialized. Skipping data save to MinIO.")
-            if not processing_uuid:
-                processing_uuid = "-1"
-
+            # processing_uuid remains "-1" if MinIO is not initialized
 
         # --- Return Response ---
         # The endpoint returns immediately after initiating background tasks
@@ -376,7 +403,7 @@ async def submit_feedback_rating(feedback: FeedbackRequest):
         existing_metadata["user_feedback_text"] = feedback.feedback_text
         existing_metadata["feedback_timestamp_utc"] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ') # Add timestamp for feedback
 
-        # 3. Save the updated metadata back to MinIO (overwrite the old object)
+        # 3. Save the updated metadata back to Minio (overwrite the old object)
         updated_metadata_bytes = json.dumps(existing_metadata, indent=2).encode('utf-8')
         print(f"Attempting to save updated metadata to MinIO: {metadata_object_key}")
         await loop.run_in_executor(
