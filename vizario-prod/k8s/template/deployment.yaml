@@ -21,7 +21,7 @@ spec:
             - containerPort: 8000
           volumeMounts:
             - name: model-volume
-              mountPath: /workspace/models/facebook/bart-large  
+              mountPath: /workspace/models/facebook  
       volumes:
         - name: model-volume
           hostPath:
