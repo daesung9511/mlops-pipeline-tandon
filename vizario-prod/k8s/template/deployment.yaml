@@ -19,6 +19,14 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
+          volumeMounts:
+            - name: model-volume
+              mountPath: /workspace/models/facebook/bart-large  
+      volumes:
+        - name: model-volume
+          hostPath:
+            path: /mnt/block                                     
+            type: DirectoryOrCreate
       nodeSelector:
-        kubernetes.io/hostname: node1  # Make sure this matches your node with the floating IP
+        kubernetes.io/hostname: node1
 
