@@ -4,7 +4,7 @@ import shutil
 import asyncio
 import json
 from datetime import datetime
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 import whisper
