@@ -46,8 +46,8 @@ else:
 
 # --- Configuration ---
 # Choose a Whisper model size (e.g., 'base', 'small', 'medium', 'large')
-# WHISPER_MODEL_SIZE = "base"
-WHISPER_MODEL_PATH = "./base.pt"
+WHISPER_MODEL_SIZE = "base"
+# WHISPER_MODEL_PATH = "./base.pt"
 
 # --- Bart Model Configuration (Local Path) ---
 # Path to your locally downloaded/trained Bart model
@@ -62,7 +62,8 @@ bart_model = None
 bart_device = "cuda" if torch.cuda.is_available() else "cpu" # Use GPU if available
 
 try:
-    whisper_model = whisper.load_model("WHISPER_MODEL_PATH")
+    # whisper_model = whisper.load_model("WHISPER_MODEL_PATH")
+    whisper_model = whisper.load_model("WHISPER_MODEL_SIZE")
     print("Whisper model loaded.")
 except Exception as e:
     print(f"Error loading Whisper model: {e}")
