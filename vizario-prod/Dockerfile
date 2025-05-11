@@ -7,7 +7,6 @@ WORKDIR /app
 # Copy the requirements file into the working directory
 COPY requirements.txt .
 
-# Install dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
@@ -20,7 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # --- Pre-downloads Whisper Model (Saves time on first run) ---
 ARG WHISPER_MODEL_SIZE="base"
 # Corrected RUN command to pass the ARG value using shell expansion
-RUN python -c "import whisper; model_size = '$WHISPER_MODEL_SIZE'; print(f'Downloading Whisper model: {model_size}'); whisper.load_model(model_size); print('Download complete.')"
+# RUN python -c "import whisper; model_size = '$WHISPER_MODEL_SIZE'; print(f'Downloading Whisper model: {model_size}'); whisper.load_model(model_size); print('Download complete.')"
 
 # Copy the application code into the working directory
 COPY app.py .
@@ -29,5 +28,4 @@ COPY app.py .
 EXPOSE 8000
 
 # Command to run the application
-# The Llama model will be downloaded by the Python script on startup if not cached
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]

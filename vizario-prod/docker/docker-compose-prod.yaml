@@ -4,7 +4,7 @@ services:
   fastapi_server:
     build:
       context: /home/cc/mlops-pipeline-tandon/vizario-prod
-      dockerfile: Dockerfile 
+      dockerfile: Dockerfile
     container_name: fastapi_server
     ports:
       - "8000:8000"  # Map host port 8000 to container port 8000 for HTTP requests
@@ -18,6 +18,9 @@ services:
       - MINIO_USER=your-access-key          # Use the same Minio root user access key
       - MINIO_PASSWORD=your-secret-key      # Use the same Minio root user secret key
       - MINIO_BUCKET_NAME=production      # The target bucket name in Minio for saving data
+      - BART_MODEL_PATH=/workspace/models/facebook/bart-large
+    volumes:
+      - /home/cc/bart-large:/workspace/models/facebook/bart-large
 
   minio:
     image: minio/minio:latest # consider pinning to a specific version
@@ -30,12 +33,12 @@ services:
       - MINIO_ROOT_PASSWORD=your-secret-key # Set your desired root secret key
     volumes:
       # Use a named volume for persistent Minio data storage managed by Docker
-      # - minio_data:/data
-      - /mnt/block/minio_data:/data
+      - minio_data:/data
+      # - /mnt/block/minio_data:/data
     command: server /data --console-address ':9001' # Start the Minio server
     networks:
       - production_net
-    
+
   minio-init:
     image: minio/mc
     container_name: minio_init
@@ -51,9 +54,9 @@ services:
     networks:
       - production_net
 
-  labelstudio:
+  label-studio:
     image: heartexlabs/label-studio:latest # Use the official Label Studio image
-    container_name: labelstudio
+    container_name: label-studio
     restart: always # Keep Label Studio running
     ports:
       - "8080:8080" # Map host port 8080 to container port 8080 for the UI
@@ -105,7 +108,7 @@ services:
       - production_net
     command: >
       bash -c "python3 -m pip install boto3 requests && start-notebook.sh"
-    
+
 networks:
   production_net:
     external: true
@@ -113,3 +116,4 @@ networks:
 volumes:
   minio_data:  # Define named volume for Minio persistent data
   labelstudio_data: # Define the named volume for Label Studio data
+  
