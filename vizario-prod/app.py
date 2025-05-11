@@ -12,8 +12,9 @@ import boto3
 import uuid
 from transformers import BartTokenizer, BartForConditionalGeneration
 import torch
-from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 from starlette.responses import Response
+from prometheus_fastapi_instrumentator import Instrumentator
 
 # --- MinIO Configuration and Client Initialization ---
 MINIO_URL = os.environ.get('MINIO_URL') # e.g. 'http://minio:9000'
@@ -47,7 +48,6 @@ else:
 # --- Configuration ---
 # Choose a Whisper model size (e.g., 'base', 'small', 'medium', 'large')
 WHISPER_MODEL_SIZE = "base"
-# WHISPER_MODEL_PATH = "./base.pt"
 
 # --- Bart Model Configuration (Local Path) ---
 # Path to your locally downloaded/trained Bart model
@@ -62,8 +62,7 @@ bart_model = None
 bart_device = "cuda" if torch.cuda.is_available() else "cpu" # Use GPU if available
 
 try:
-    # whisper_model = whisper.load_model("WHISPER_MODEL_PATH")
-    whisper_model = whisper.load_model("WHISPER_MODEL_SIZE")
+    whisper_model = whisper.load_model(WHISPER_MODEL_SIZE)
     print("Whisper model loaded.")
 except Exception as e:
     print(f"Error loading Whisper model: {e}")
@@ -79,6 +78,21 @@ except Exception as e:
     bart_tokenizer = None
     bart_model = None
 
+
+# --- Prometheus Application Metrics ---
+# Counter for tracking the type of processing task (Summarization or Q&A)
+processing_task_counter = Counter(
+    "vizario_processing_task_total", # Use a unique prefix like 'vizario'
+    "Count of processing tasks by type (summarization or qa)",
+    ['task_type'] # Label to differentiate summarization vs. qa
+)
+
+# Histogram for tracking the length of the generated output (answer or summary)
+output_length_histogram = Histogram(
+    "vizario_generated_output_length", # Use a unique prefix
+    "Length of the generated output (summary or answer)",
+    buckets=[0, 50, 100, 200, 400, 800, 1500, 3000] # Define relevant buckets for text length
+)
 
 # --- FastAPI App ---
 app = FastAPI(
@@ -285,6 +299,16 @@ async def process_meeting_audio(
         result_text = bart_tokenizer.decode(generate_output[0], skip_special_tokens=True)
         print(f"Bart processing complete. Result: {result_text[:200]}...") # Print first 200 chars of result
 
+        # --- Update Prometheus Application Metrics ---
+        try:
+            # Increment the counter for the specific task performed
+            processing_task_counter.labels(task_type=processing_task.lower().replace(" ", "_")).inc() # Use lowercase, underscores for label
+            # Observe the length of the generated text
+            output_length_histogram.observe(len(result_text))
+        except Exception as metric_e:
+            # Log any errors during metric updates so they don't break the request
+            print(f"Error updating application metrics: {metric_e}")
+
         # --- Initiate Data Saving to MinIO (NEW - as background tasks) ---
         # Check if the s3_client was successfully initialized globally
         if s3_client:
@@ -420,3 +444,6 @@ async def submit_feedback_rating(feedback: FeedbackRequest):
     except Exception as e:
         print(f"An unexpected error occurred while processing feedback: {e}")
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred while processing feedback: {e}")
+
+
+Instrumentator().instrument(app).expose(app)
