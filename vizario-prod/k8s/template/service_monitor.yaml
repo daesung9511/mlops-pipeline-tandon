@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: fastapi-monitor
+  namespace: vizario-prod
+  labels:
+    release: prometheus  # This must match your Helm release name
+spec:
+  selector:
+    matchLabels:
+      app: fastapi
+  endpoints:
+    - path: /metrics
+      port: http
+      interval: 15s
+
