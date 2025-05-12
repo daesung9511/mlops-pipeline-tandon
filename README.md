@@ -189,6 +189,58 @@ DDP & FSDP Training - code error
 ![image.png](attachment:b18a92e7-5daa-4017-a1d2-3da6c467e7ce:image.png)
 
 ---
+### Unit 6 and 7: MODEL SERVING AND EVALUATION PERSON - 2 minutes
+
+**Serving from an API endpoint**:
+
+The FastAPI app exposes the core meeting processing functionality, including transcription and LLM-based analysis (summarization/Q&A), via a web API endpoint. The primary endpoint is `/process-meeting/` (HTTP POST method)
+
+- **Input**:
+    - `audio_file`: This is the audio file for the meeting we wish to analyze. (e.g., WAV, MP3, M4A as an `UploadFile)`
+    - `query`: An optional text string provided as a `Form` field. If present, the API performs Q&A that aims to answer the query. If this field is empty, it performs summarization.
+- **Output:** Returns a **JSON response**. The structure includes:
+    - `interaction_id`: A unique ID for the processing event.
+    - `filename`: The name of the uploaded audio file.
+    - `transcript`: The generated transcript from the audio.
+    - `processing_task`: Indicates whether 'Summarization' or 'Question Answering' was performed.
+    - Either `summary` (if no query was provided) or `answer` containing the output from the Bart model.
+- **Code:** https://github.com/daesung9511/mlops-pipeline-tandon/blob/906e25a4544ec011a965bd4e9bc46160ff1ce019/vizario-prod/app.py
+
+**Identify requirements**: 
+
+Our specific customer is a UN-diplomat. As we covered from the earlier section we prioritize model accuracy over latency/inference speed. This is the reason why we deploy our models on a CPU node (for continuous iterations of evaluation).
+
+**Model optimizations**:
+
+To optimize the model, we performed ONNX format conversion, and used it for our serving endpoint. The code can be found here [[link](https://github.com/daesung9511/mlops-pipeline-tandon/blob/906e25a4544ec011a965bd4e9bc46160ff1ce019/vizario-onnx/app.py)]. However, note that this version uses the Llama model, which was our previous model for the meeting analysis LLM before BART.
+
+**System optimizations**:
+
+With the async definitions of the main function the server to handle many incoming requests concurrently without being blocked by I/O waits. Moreover intensive model inference (Whisper transcription, Bart generation) can run in a separate thread pool using `asyncio.run_in_executor`, preventing these tasks from blocking the main asynchronous event loop.
+
+**Offline evaluation of model**: 
+
+We use offline tests to measure the accuracy of the whisper transcriptions. We give it some known failure cases, such as bad audio quality, and audio in different languages. We then evaluate the output with human-in-the-loop, as it is the most accurate way to see if the model outputs good results.
+
+**Load test in staging**: 
+
+To simulate a load on our application, we use a dedicated load test suite written in Python.
+
+code: https://github.com/daesung9511/mlops-pipeline-tandon/blob/906e25a4544ec011a965bd4e9bc46160ff1ce019/vizario-staging/workspace/load_test.ipynb
+
+grafana image:
+
+https://github.com/daesung9511/mlops-pipeline-tandon/blob/1b8a5aac7fb9404a67611d14ca1285f1d06da171/images/staging-loadtest.png
+
+**Define a business-specific evaluation**: 
+
+A business-specific evaluation metric for our App could be tracking the  **I**nformation Retrieval Time Saved by the UN diplomat who utilizes the summaries and Q&A feature, maybe measured through user surveys, or direct feedback.
+
+**Optional: Develop multiple options for serving**: 
+
+The model serving endpoint was initially developed for GPU inference, to optimize inference latency. However as our priority shifted to continuous monitoring and testing, we have changed the deployment of the fastAPI container to a CPU node. The model is still compatible to utilizing GPUs by changing the configuration in the Dockerfile.
+
+---
 
 Unit 8: DATA PERSON - 1 minutes
 
@@ -518,6 +570,26 @@ spec:
       prune: true
       selfHeal: true
 ```
+---
+### Unit 6 and 7: MODEL SERVING AND EVALUATION PERSON - 1 minute
+
+**Online evaluation**
+
+To observe and track the application's performance, health, and model's behavior continuously while it is running in a production, we use the monitoring tools. Prometheus is used as a time-series database to collect metrics by scraping the application's `/metrics` endpoint. ****Grafana is used as a dashboard that visualizes the metrics collected by Prometheus.
+
+**the** Metrics Collected Includes HTTP request counts (total, by endpoint, by status code), request duration percentiles, server resource usage (CPU, memory)
+
+We also have application-specific Metrics such as `vizario_processing_task_total` (counting summarization vs. Q&A requests) and `vizario_generated_output_length` (histogram of the length of generated outputs).
+
+Config: https://github.com/daesung9511/mlops-pipeline-tandon/blob/906e25a4544ec011a965bd4e9bc46160ff1ce019/vizario-staging/docker/docker-compose-prod.yaml#L74
+
+**Closing the Loop**
+
+The `/feedback/rating` API endpoint allows users to explicitly provide feedback (helpful/unhelpful, feedback text) on a specific interaction. This feedback along with the interaction data, is saved to MinIO, creating a dataset that can be used for analysis of model performance in a live production setting, generating new labeled data according to user feedback. We configure LabelStudio to handle the relabeling, which is shown in the docker compose file. The template for the relabeling project is shown below.
+
+labelstudio image:
+
+https://github.com/daesung9511/mlops-pipeline-tandon/blob/2f3f02c68e618de1dd53f97b1f89c421c014acd5/images/labelstudio.png
 
 ---
 
