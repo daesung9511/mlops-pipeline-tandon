@@ -16,34 +16,30 @@ To meet these requirements, we use the QMSum dataset, which is designed for quer
 
 - We use QMSum (https://github.com/Yale-LILY/QMSum) Dataset, which is total 173.08 MB.
 
-![QMSum_scale.png](attachment:2ad139ff-7f5b-428c-beab-f404532eb32c:QMSum_scale.png)
+![QMSum_Scale](images/QMSum_scale.png)
 
 ### 2.2. Model: BART (1.58 GB)
 
 - We use BART model (large size) for summarization task ([https://huggingface.co/docs/transformers/en/model_doc/bart](https://huggingface.co/facebook/bart-large)) loaded from Hugging Face Hub.
     
-    ![BART_scale.png](attachment:821438c1-5cb0-4016-a62f-f86e8666e9cf:BART_scale.png)
-    
+![QMSum_Scale](images/BART_scale.png)
 
 ### 2.3. Model: Whisper (Base model, 139MB)
 
 - We use OpenAI’s Whisper model (base size) for automatic speech recognition task loaded from `openai` API.
 
-![whisper_scale.png](attachment:258e6876-9b0d-4c5d-8a39-240b125d4984:whisper_scale.png)
+![Whisper_Scale] (images/whisper_scale.png)
 
 ### 2.4. Training Time (15 min)
 
 - From Wandb (only team members can access it) log: https://wandb.ai/yj3263-new-york-university/huggingface?nw=nwuseryj3263, the average training time (single GPU, 40GB) was **15 minutes**.
 - The size of the deployment: ~**2000** requests per day (30 sec per request)
 
-![training_time_scale.png](attachment:405b7b8a-7778-4a70-9fc2-ab966cb1e6d3:training_time_scale.png)
-
+![Training Time Scale](images/training_time_scale.png)
 ---
 
 ## 3. Cloud Native Infrastructure Diagram
-
-![image.png](attachment:c840c88d-1f23-4be4-82eb-c67567987479:image.png)
-
+![System Structure Diagram](images/structure.png)
 ---
 
 ## 4. Data Pipeline
@@ -58,13 +54,15 @@ We use 1) **object storage** for train dataset and 2) **block storage** for load
 
 ![object_storage_content_max-depth2.png](attachment:54f20c4c-0560-435a-b474-a5b2cc0536c1:object_storage_content_max-depth2.png)
 
+![Object Storage Content](images/object_storage_content_max-depth2.png)
+
 1. Block storage has MinIO data (online evaluation) and BART model parameters, which takes up to **1.6 GB**.
 
-![block_storage_content.png](attachment:90ab1422-da43-49ed-bd97-c1edd44b12c6:block_storage_content.png)
+![Block Storage Content](images/block_storage_content.png)
 
 ### 4.2. Offline Data
 
-![train_data_sample.png](attachment:773d670f-ae43-4c41-b8ef-27d8220337e7:train_data_sample.png)
+![Train Data Sample](images/train_data_sample.png)
 
 For example, `test.json` contains:
 
@@ -86,7 +84,13 @@ For example, `test.json` contains:
 
 1. First, we downloaded the train dataset (https://github.com/Yale-LILY/QMSum) locally in the server for training.
 2. In the `1train_bart.py` (https://github.com/daesung9511/mlops-pipeline-tandon/blob/dev/Bart_training/1_train_bart.py), we use `load_dataset()` method to divide the dataset into train, evaluation and test datasets.
-3. 
+3. In the code, the jsonl file needs to be formatted into BART-style prompt:
+
+```python
+inputs = ["question: " + q + " context: " + c for q, c in zip(examples["query"], examples["meeting_transcripts"])]
+....
+tokenized_datasets = dataset.map(preprocess_function, batched=True)
+```
 
 ---
 
@@ -534,4 +538,4 @@ To support fast and modular deployment, I designed the system using a **microser
 Each microservice is deployed on Kubernetes using **Argo CD**, and they are loosely coupled to allow fault isolation: if one service (e.g., model training) fails, it doesn’t affect the serving pipeline. For observability, each service exposes Prometheus-compatible metrics endpoints, and **Grafana dashboards** visualize their individual performance. This modular approach also allows me to update or scale each service (like the FastAPI canary deployment) independently, which is critical as the system scales.
 ![grafana](images/grafana.png)
 
-![System Structure Diagram] (images/structure.png)
+![System Structure Diagram](images/structure.png)
