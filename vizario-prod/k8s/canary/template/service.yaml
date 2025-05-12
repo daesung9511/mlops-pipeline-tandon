@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: vizario-canary-svc
+  namespace: vizario-canary
+  labels:
+    app: fastapi     # ✅ label needed by ServiceMonitor
+spec:
+  selector:
+    app: fastapi     # ✅ must match your deployment label
+  ports:
+    - name: http      # ✅ needed for ServiceMonitor to find the right port
+      protocol: TCP
+      port: 79
+      targetPort: 8000
+      nodePort: 32079
+  type: NodePort
+
