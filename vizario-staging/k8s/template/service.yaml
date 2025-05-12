@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: vizario-prod-svc
+  namespace: vizario-prod
+  labels:
+    app: fastapi     # ✅ label needed by ServiceMonitor
+spec:
+  selector:
+    app: fastapi     # ✅ must match your deployment label
+  ports:
+    - name: http      # ✅ needed for ServiceMonitor to find the right port
+      protocol: TCP
+      port: 80
+      targetPort: 8000
+      nodePort: 32080
+  type: NodePort
+

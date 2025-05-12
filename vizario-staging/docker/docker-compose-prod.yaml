@@ -76,6 +76,8 @@ services:
     container_name: prometheus
     ports:
       - "9090:9090"
+    networks:
+      - production_net
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
 
@@ -89,16 +91,20 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
-
+    networks:
+      - production_net
+  
   jupyter:
-    image: quay.io/jupyter/minimal-notebook:latest
+    build:
+      context: .
+      dockerfile: Dockerfile_jupyter
     container_name: jupyter
     ports:
       - "8888:8888"
     volumes:
-      - /home/cc/mlops-pipeline-tandon/vizario-prod/workspace:/home/jovyan/work # mount workspace
+      - /home/cc/mlops-pipeline-tandon/vizario-prod/workspace:/home/jovyan/work
     environment:
-      - MINIO_URL=http://minio:9000 
+      - MINIO_URL=http://minio:9000
       - MINIO_USER=your-access-key
       - MINIO_PASSWORD=your-secret-key
       - MINIO_BUCKET_NAME=production
@@ -106,9 +112,6 @@ services:
       - LABEL_STUDIO_USER_TOKEN=ab9927067c51ff279d340d7321e4890dc2841c4a
     networks:
       - production_net
-    command: >
-      bash -c "python3 -m pip install boto3 requests && start-notebook.sh"
-
 networks:
   production_net:
     external: true
@@ -116,4 +119,3 @@ networks:
 volumes:
   minio_data:  # Define named volume for Minio persistent data
   labelstudio_data: # Define the named volume for Label Studio data
-  
