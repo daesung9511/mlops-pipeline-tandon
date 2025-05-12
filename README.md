@@ -252,7 +252,7 @@ The production data (audio,
 
 MinIO config [[link](https://github.com/daesung9511/mlops-pipeline-tandon/blob/906e25a4544ec011a965bd4e9bc46160ff1ce019/vizario-staging/docker/docker-compose-prod.yaml#L37)]
 
-MinIO App setup [link]
+MinIO App setup [[link](https://github.com/daesung9511/mlops-pipeline-tandon/blob/555a10cc5745aa0011c52ef84998649c1ae490c0/vizario-staging/app.py)]
 
 ### 1. **Infrastructure and Infrastructure-as-code**
 
