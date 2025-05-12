@@ -422,7 +422,7 @@ For model deployment across environments, I used **Argo CD** to implement a GitO
 
 Additionally, I integrated **Prometheus** to scrape metrics from the FastAPI app at each stage via a `/metrics` endpoint. The metrics are visualized in **Grafana dashboards**, allowing me to monitor performance, request counts, and health for each deployed stage (e.g., canary latency, staging throughput) in real time.
 
-![argocd_apps.png](attachment:62a818fb-e3e7-4248-9ebb-9be3ba3cd501:argocd_apps.png)
+![Argo CD Apps](images/argocd_apps.png)
 
 ### Helm Chart for creating prometheus and grafana app on k8s
 
@@ -436,7 +436,7 @@ helm install prometheus prometheus-community/kube-prometheus-stack
 
 ### ArgoCD app yaml for staging
 
-[mlops-pipeline-tandon/vizario-prod/k8s/staging/template at dev · daesung9511/mlops-pipeline-tandon](https://github.com/daesung9511/mlops-pipeline-tandon/tree/dev/vizario-prod/k8s/staging/template)
+[mlops-pipeline-tandon/vizario-prod/k8s/staging/template](https://github.com/daesung9511/mlops-pipeline-tandon/tree/dev/vizario-prod/k8s/staging/template)
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -450,9 +450,9 @@ spec:
     namespace: default
     server: 'https://kubernetes.default.svc'
   source:
-    path: vizario-prod/k8s/{stage-level}
+    path: vizario-prod/k8s/staging
     repoURL: 'https://github.com/daesung9511/mlops-pipeline-tandon.git'
-    targetRevision: {stage-level}
+    targetRevision: staging
   sources: []
   project: default
   syncPolicy:
@@ -463,7 +463,7 @@ spec:
 
 ### ArgoCD app yaml for canary
 
-[mlops-pipeline-tandon/vizario-prod/k8s/canary/template at dev · daesung9511/mlops-pipeline-tandon](https://github.com/daesung9511/mlops-pipeline-tandon/tree/dev/vizario-prod/k8s/canary/template)
+[mlops-pipeline-tandon/vizario-prod/k8s/canary/template](https://github.com/daesung9511/mlops-pipeline-tandon/tree/dev/vizario-prod/k8s/canary/template)
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -490,7 +490,7 @@ spec:
 
 ### ArgoCD app yaml for production
 
-[mlops-pipeline-tandon/vizario-prod/k8s/production/template at dev · daesung9511/mlops-pipeline-tandon](https://github.com/daesung9511/mlops-pipeline-tandon/tree/dev/vizario-prod/k8s/production/template)
+[mlops-pipeline-tandon/vizario-prod/k8s/production/template](https://github.com/daesung9511/mlops-pipeline-tandon/tree/dev/vizario-prod/k8s/production/template)
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -520,5 +520,17 @@ spec:
 ### 3. **CI/CD and Continuous Training**
 
 Re-training is triggered when new data is committed to the dataset repository or a retraining job is manually scheduled. Once a new model is trained, it is automatically saved to a shared block persistent. The CI/CD pipeline then builds a new container image, pushes it to a registry, and Argo CD picks up the image tag update from Git to deploy it. This completes the retraining-to-redeployment loop, enabling continuous model improvement without manual intervention.
-
 - whenever pushing the commit, the argocd will syncronize the image pushed by github ci/cd
+[mlops-pipeline-tandon/.github/workflows/docker-publish-canary.yml](https://github.com/daesung9511/mlops-pipeline-tandon/blob/dev/.github/workflows/docker-publish-canary.yml)
+
+[mlops-pipeline-tandon/.github/workflows/docker-publish-prod.yml](https://github.com/daesung9511/mlops-pipeline-tandon/blob/dev/.github/workflows/docker-publish-prod.yml)
+
+[mlops-pipeline-tandon/.github/workflows/docker-publish.yml](https://github.com/daesung9511/mlops-pipeline-tandon/blob/dev/.github/workflows/docker-publish.yml)
+
+### 4. Microservice Architecture
+
+To support fast and modular deployment, I designed the system using a **microservice architecture**, where each core function—such as model inference (FastAPI), training orchestration, monitoring, and storage—is packaged as a **separate containerized service**. These services communicate via well-defined APIs, making them independently deployable and maintainable.
+Each microservice is deployed on Kubernetes using **Argo CD**, and they are loosely coupled to allow fault isolation: if one service (e.g., model training) fails, it doesn’t affect the serving pipeline. For observability, each service exposes Prometheus-compatible metrics endpoints, and **Grafana dashboards** visualize their individual performance. This modular approach also allows me to update or scale each service (like the FastAPI canary deployment) independently, which is critical as the system scales.
+![grafana](images/grafana.png)
+
+![System Structure Diagram] (images/structure.png)
