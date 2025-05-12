@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapi
+  namespace: vizario-prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fastapi
+  template:
+    metadata:
+      labels:
+        app: fastapi
+    spec:
+      containers:
+        - name: fastapi
+          image: ghcr.io/daesung9511/mlops-pipeline-tandon:production
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          volumeMounts:
+            - name: model-volume
+              mountPath: /workspace/models/facebook  
+      volumes:
+        - name: model-volume
+          hostPath:
+            path: /mnt/block                                     
+            type: DirectoryOrCreate
+      nodeSelector:
+        kubernetes.io/hostname: node1
+
