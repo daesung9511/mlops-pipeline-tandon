@@ -521,6 +521,7 @@ spec:
 
 Re-training is triggered when new data is committed to the dataset repository or a retraining job is manually scheduled. Once a new model is trained, it is automatically saved to a shared block persistent. The CI/CD pipeline then builds a new container image, pushes it to a registry, and Argo CD picks up the image tag update from Git to deploy it. This completes the retraining-to-redeployment loop, enabling continuous model improvement without manual intervention.
 - whenever pushing the commit, the argocd will syncronize the image pushed by github ci/cd
+
 [mlops-pipeline-tandon/.github/workflows/docker-publish-canary.yml](https://github.com/daesung9511/mlops-pipeline-tandon/blob/dev/.github/workflows/docker-publish-canary.yml)
 
 [mlops-pipeline-tandon/.github/workflows/docker-publish-prod.yml](https://github.com/daesung9511/mlops-pipeline-tandon/blob/dev/.github/workflows/docker-publish-prod.yml)
