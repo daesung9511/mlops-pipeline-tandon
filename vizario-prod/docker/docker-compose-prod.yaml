@@ -91,6 +91,8 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - production_net
 
   jupyter:
     image: quay.io/jupyter/minimal-notebook:latest
