@@ -184,9 +184,11 @@ DDP & FSDP Training - code error
 
 [4-2_train_bart_ray_fsdp_accum4__(fail).py](https://github.com/daesung9511/mlops-pipeline-tandon/blob/906e25a4544ec011a965bd4e9bc46160ff1ce019/Bart_training/4-2_train_bart_ray_fsdp_accum4__(fail).py)
 
-![스크린샷 2025-05-11 오후 11.08.49.png](attachment:c5d44477-1a2d-494e-bc2d-0bcf2d1be84e:스크린샷_2025-05-11_오후_11.08.49.png)
+![스크린샷 2025-05-11 오후 11.08.49.png](images/5-5-1.png)
 
-![image.png](attachment:b18a92e7-5daa-4017-a1d2-3da6c467e7ce:image.png)
+![image.png](images/5-5-2.png)
+
+![image2.png](images/5-5-3.png)
 
 ---
 ### Unit 6 and 7: MODEL SERVING AND EVALUATION PERSON - 2 minutes
