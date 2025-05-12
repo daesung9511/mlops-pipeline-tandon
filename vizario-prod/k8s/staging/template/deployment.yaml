@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: fastapi
-  namespace: vizario-prod
+  namespace: vizario-staging
 spec:
   replicas: 1
   selector:
@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: fastapi
-          image: ghcr.io/daesung9511/mlops-pipeline-tandon:production
+          image: ghcr.io/daesung9511/mlops-pipeline-tandon:dev
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
